@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gemini 4 Carbon — Custom WebGL2 GPGPU Ocean VFX Engine</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script type="module" crossorigin src="./assets/index-BTHOtUR6.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-5ve8B45F.css">
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="vfx-canvas" aria-label="3D Underwater GPU Fish Swarm VFX Canvas"></canvas>
+
+      <!-- Act III Choreography Emblem Overlay -->
+      <div id="emblem-overlay" aria-hidden="true">
+        <span id="emblem-text">Gemini 4 Carbon</span>
+      </div>
+
+      <!-- Top Telemetry & Controls Header -->
+      <header id="hud-top" class="hud-element">
+        <div class="telemetry-pill">
+          <span class="status-dot"></span>
+          <span id="tel-fps">60 FPS</span>
+          <span class="divider">·</span>
+          <span id="tel-count">32,768 Fish</span>
+          <span class="divider">·</span>
+          <span id="tel-chapter">Act I · Bait Ball</span>
+        </div>
+
+        <div class="top-actions">
+          <button id="btn-reset-cam" class="glass-btn" type="button" title="カメラ視点を初期位置に戻す">
+            視点リセット
+          </button>
+          <button id="btn-toggle-panel" class="glass-btn" type="button" aria-expanded="false">
+            VFX 設定
+          </button>
+          <button id="btn-cinema" class="glass-btn" type="button" title="HUD表示切替 (H)">
+            シネマ表示 (H)
+          </button>
+        </div>
+      </header>
+
+      <!-- Collapsible VFX Engine Parameter Drawer -->
+      <aside id="control-drawer" class="hud-element hidden" aria-label="VFX Engine Controls">
+        <div class="drawer-section">
+          <div class="section-label">フォーメーション制御</div>
+          <div class="mode-grid" id="mode-buttons">
+            <button type="button" data-mode="0" class="chip-btn active">26秒 自動演出</button>
+            <button type="button" data-mode="1" class="chip-btn">ベイトボール固定</button>
+            <button type="button" data-mode="2" class="chip-btn">双翼クラスタ固定</button>
+            <button type="button" data-mode="3" class="chip-btn">3D Gemini スター固定</button>
+            <button type="button" data-mode="4" class="chip-btn">自由回遊 Boids</button>
+          </div>
+        </div>
+
+        <div class="drawer-section">
+          <div class="section-label">GPU インスタンス数 (GPGPU MRT)</div>
+          <div class="preset-row" id="preset-buttons">
+            <button type="button" data-preset="16k" class="chip-btn">16,384</button>
+            <button type="button" data-preset="32k" class="chip-btn active">32,768</button>
+            <button type="button" data-preset="65k" class="chip-btn">65,536</button>
+          </div>
+        </div>
+
+        <div class="drawer-section">
+          <label class="slider-row" for="slider-godrays">
+            <span>ボリュメトリック光芒 (God Rays)</span>
+            <span id="val-godrays">100%</span>
+          </label>
+          <input id="slider-godrays" type="range" min="0" max="180" value="100" />
+
+          <label class="slider-row" for="slider-caustics">
+            <span>水面コースティクス強度</span>
+            <span id="val-caustics">100%</span>
+          </label>
+          <input id="slider-caustics" type="range" min="0" max="180" value="100" />
+        </div>
+
+        <div class="drawer-section">
+          <label class="section-label" for="input-emblem">エンブレム表示テキスト</label>
+          <input id="input-emblem" class="text-input" type="text" value="Gemini 4 Carbon" maxlength="40" />
+        </div>
+
+        <div class="drawer-section row-between">
+          <span>マウス水流インタラクション</span>
+          <input id="chk-pointer" type="checkbox" checked />
+        </div>
+
+        <p class="hint-text">ドラッグ: 3Dカメラ回転 · ホイール: ズーム · Hキー: UI非表示</p>
+      </aside>
+
+      <!-- Bottom Cinema Scrubber & Chapter Jump Bar -->
+      <footer id="hud-bottom" class="hud-element">
+        <div class="chapter-jumps">
+          <button type="button" class="jump-chip" data-jump="0.8">00:00 ベイトボール</button>
+          <button type="button" class="jump-chip" data-jump="8.0">00:08 双翼</button>
+          <button type="button" class="jump-chip" data-jump="12.6">00:14 Gemini スター</button>
+          <button type="button" class="jump-chip" data-jump="17.6">00:18 小群拡散</button>
+          <button type="button" class="jump-chip" data-jump="22.4">00:24 静寂の海</button>
+        </div>
+
+        <div class="player-bar">
+          <button id="btn-play" class="icon-btn" type="button" aria-label="再生/一時停止" title="再生/一時停止 (Space)">
+            <span id="icon-play-label">❚❚</span>
+          </button>
+
+          <input
+            id="timeline-scrubber"
+            type="range"
+            min="0"
+            max="26"
+            step="0.02"
+            value="0"
+            aria-label="26秒演出タイムライン"
+          />
+
+          <span id="time-readout" class="time-readout">00:00 / 00:26</span>
+
+          <button id="btn-fullscreen" class="icon-btn" type="button" title="フルスクリーン (F)">
+            ⛶
+          </button>
+        </div>
+      </footer>
+
+      <button id="btn-exit-cinema" class="cinema-restore hidden" type="button">
+        UIを表示 (H)
+      </button>
+
+      <div id="error-banner" class="error-banner hidden" role="alert"></div>
+    </div>
+
+  </body>
+</html>
