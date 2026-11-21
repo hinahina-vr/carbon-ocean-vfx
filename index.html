@@ -170,8 +170,8 @@
         }
       }
     </style>
-    <script type="module" crossorigin src="./assets/index-Jm7i_1wR.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-dvDU8hth.css">
+    <script type="module" crossorigin src="./assets/index-B3LsSTFN.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-Dd2rQdGx.css">
   </head>
   <body>
     <div id="boot-loader" role="status" aria-live="polite" aria-label="読み込み中">
@@ -1386,6 +1386,99 @@
             value="22"
             title="姿勢角スライダー (-25° ヘッドダウン 〜 0° 水平 〜 90° 垂直 / Z・Xキー)"
           />
+        </div>
+
+        <!-- Bottom-Right Intuitive Cross D-Pad Controller (For non-FPS / mouse / touch players!) -->
+        <div
+          id="okinawa-dpad-widget"
+          class="padi-glass-card okinawa-dpad-widget"
+          aria-label="移動用十字ボタンパッド"
+        >
+          <div class="dpad-top-row">
+            <span class="dpad-title">🕹️ 移動ボタン</span>
+            <span class="dpad-hint">ドラッグ:視点</span>
+          </div>
+
+          <div class="dpad-cross-grid" role="group" aria-label="前後左右の移動">
+            <span class="dpad-empty" aria-hidden="true"></span>
+            <button
+              type="button"
+              id="dpad-btn-w"
+              data-movekey="KeyW"
+              class="dpad-btn dir-up"
+              title="前に進む (Wキー長押しでもOK)"
+            >
+              <span class="dpad-arr">▲</span>
+              <span class="dpad-lbl">まえ<small>W</small></span>
+            </button>
+            <span class="dpad-empty" aria-hidden="true"></span>
+
+            <button
+              type="button"
+              id="dpad-btn-a"
+              data-movekey="KeyA"
+              class="dpad-btn dir-left"
+              title="左へ移動 (Aキー)"
+            >
+              <span class="dpad-arr">◀</span>
+              <span class="dpad-lbl">左<small>A</small></span>
+            </button>
+            <button
+              type="button"
+              id="btn-dpad-dash"
+              class="dpad-center-btn"
+              title="早歩きモード ON/OFF 切替 (ShiftキーでもOK)"
+            >
+              <span class="dpad-dash-ico">🏃</span>
+              <span id="lbl-dpad-dash" class="dpad-dash-txt">早歩き</span>
+            </button>
+            <button
+              type="button"
+              id="dpad-btn-d"
+              data-movekey="KeyD"
+              class="dpad-btn dir-right"
+              title="右へ移動 (Dキー)"
+            >
+              <span class="dpad-arr">▶</span>
+              <span class="dpad-lbl">右<small>D</small></span>
+            </button>
+
+            <span class="dpad-empty" aria-hidden="true"></span>
+            <button
+              type="button"
+              id="dpad-btn-s"
+              data-movekey="KeyS"
+              class="dpad-btn dir-down"
+              title="後ろへ下がる (Sキー)"
+            >
+              <span class="dpad-arr">▼</span>
+              <span class="dpad-lbl">うしろ<small>S</small></span>
+            </button>
+            <span class="dpad-empty" aria-hidden="true"></span>
+          </div>
+
+          <div class="dpad-sub-row">
+            <button
+              type="button"
+              id="dpad-btn-up"
+              data-movekey="Space"
+              class="dpad-sub-btn"
+              title="ジャンプ / 海中では浮上 (Space)"
+            >
+              <span id="lbl-dpad-up">⬆ ジャンプ</span>
+              <kbd>Space</kbd>
+            </button>
+            <button
+              type="button"
+              id="dpad-btn-down"
+              data-movekey="KeyC"
+              class="dpad-sub-btn hidden"
+              title="海中で下へ潜る (Shift / C)"
+            >
+              <span>▼ 潜降</span>
+              <kbd>C</kbd>
+            </button>
+          </div>
         </div>
 
         <!-- Raft Dive Gear Crafting Modal -->
