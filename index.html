@@ -3,67 +3,1980 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gemini 4 Carbon — Custom WebGL2 GPGPU Ocean VFX Engine</title>
+    <title>Carbon Ocean VFX — 3D GPGPU Underwater Swarm Pachinko</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
-    <script type="module" crossorigin src="./assets/index-BTHOtUR6.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-5ve8B45F.css">
+    <style id="critical-boot-style">
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #030b18;
+        color: #eaf6ff;
+        font-family: 'Plus Jakarta Sans', 'Inter', 'Hiragino Sans', 'Yu Gothic UI', 'Meiryo', sans-serif;
+      }
+      .hidden {
+        display: none !important;
+      }
+      .is-offscreen {
+        opacity: 0 !important;
+        pointer-events: none !important;
+        transform: translate3d(-9999px, -9999px, 0) !important;
+      }
+      #app {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      body:not(.app-ready) #app {
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+      }
+      #boot-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background:
+          radial-gradient(circle at 50% 36%, rgba(16, 138, 198, 0.24) 0%, rgba(5, 24, 52, 0.88) 52%, #020813 100%);
+        transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.55s ease;
+        user-select: none;
+      }
+      #boot-loader.is-done {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+      .boot-loader-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 18px;
+        width: min(420px, 86vw);
+        padding: 34px 32px 30px;
+        border-radius: 22px;
+        background: rgba(6, 20, 42, 0.72);
+        border: 1px solid rgba(110, 214, 255, 0.24);
+        box-shadow:
+          0 24px 64px rgba(0, 0, 0, 0.65),
+          inset 0 1px 0 rgba(255, 255, 255, 0.10);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+      }
+      .boot-ring-wrap {
+        position: relative;
+        width: 68px;
+        height: 68px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .boot-ring-outer {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        border: 2.5px solid rgba(90, 212, 255, 0.16);
+        border-top-color: #38e2ff;
+        border-right-color: #f0d28a;
+        animation: bootSpin 1.25s cubic-bezier(0.45, 0.15, 0.55, 0.85) infinite;
+      }
+      .boot-ring-inner {
+        position: absolute;
+        inset: 11px;
+        border-radius: 50%;
+        border: 2px solid rgba(240, 210, 138, 0.14);
+        border-bottom-color: rgba(82, 232, 255, 0.85);
+        animation: bootSpinRev 1.9s linear infinite;
+      }
+      .boot-ring-icon {
+        font-size: 22px;
+        filter: drop-shadow(0 0 10px rgba(56, 226, 255, 0.55));
+      }
+      .boot-title {
+        margin: 2px 0 0;
+        font-size: 19px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        color: #f4fbff;
+        text-align: center;
+      }
+      .boot-subtitle {
+        margin: -10px 0 2px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.20em;
+        color: rgba(164, 224, 255, 0.78);
+        text-align: center;
+      }
+      .boot-bar-track {
+        width: 100%;
+        height: 6px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.09);
+        overflow: hidden;
+        position: relative;
+      }
+      .boot-bar-fill {
+        width: 8%;
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #1cc8ff 0%, #5ff2d6 58%, #f4d58d 100%);
+        box-shadow: 0 0 14px rgba(56, 226, 255, 0.65);
+        transition: width 0.22s ease-out;
+      }
+      .boot-meta-row {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 12px;
+        color: rgba(212, 238, 255, 0.86);
+      }
+      #boot-stage-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      #boot-pct-text {
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+        color: #7ceeff;
+      }
+      @keyframes bootSpin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes bootSpinRev {
+        to {
+          transform: rotate(-360deg);
+        }
+      }
+    </style>
+    <script type="module" crossorigin src="./assets/index-Jm7i_1wR.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-dvDU8hth.css">
   </head>
   <body>
+    <div id="boot-loader" role="status" aria-live="polite" aria-label="読み込み中">
+      <div class="boot-loader-card">
+        <div class="boot-ring-wrap" aria-hidden="true">
+          <div class="boot-ring-outer"></div>
+          <div class="boot-ring-inner"></div>
+          <span class="boot-ring-icon">🌊</span>
+        </div>
+        <div class="boot-title">CARBON OCEAN</div>
+        <div class="boot-subtitle">OKINAWA LAGOON · ZEN SANCTUARY</div>
+        <div class="boot-bar-track">
+          <div id="boot-bar-fill" class="boot-bar-fill"></div>
+        </div>
+        <div class="boot-meta-row">
+          <span id="boot-stage-text">3Dワールドを読み込み中…</span>
+          <span id="boot-pct-text">8%</span>
+        </div>
+      </div>
+    </div>
+
     <div id="app">
       <canvas id="vfx-canvas" aria-label="3D Underwater GPU Fish Swarm VFX Canvas"></canvas>
 
-      <!-- Act III Choreography Emblem Overlay -->
+      <!-- 3D Perspective-Projected Bamboo Beachfront Cinema Screen Layer (z-index: 2, locked to 3D world board!) -->
+      <div id="okinawa-3d-cinema-layer" class="okinawa-3d-cinema-layer">
+        <div id="okinawa-3d-cinema-quad" class="okinawa-3d-cinema-quad is-offscreen">
+          <div id="yt-empty-placeholder" class="yt-empty-placeholder">
+            <div class="yt-empty-badge">CHURA BEACH 3D CINEMA</div>
+            <div class="yt-empty-icon">🎬🏝️🎶</div>
+            <div class="yt-empty-desc">
+              ボードをクリック（または上の <strong>🎵 YouTubeチル</strong>）して<br />
+              好きな YouTube URL の映像＆音楽をこのスクリーンに投影♪
+            </div>
+          </div>
+          <iframe
+            id="yt-embed-iframe"
+            class="yt-embed-iframe is-offscreen"
+            title="Okinawa 3D Beach Cinema YouTube Screen"
+            referrerpolicy="strict-origin-when-cross-origin"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen
+          ></iframe>
+        </div>
+      </div>
+
+      <!-- Subtle Cinema Typography Overlay (Act III Showcase / Jackpot Numeral Echo) -->
       <div id="emblem-overlay" aria-hidden="true">
         <span id="emblem-text">Gemini 4 Carbon</span>
       </div>
 
-      <!-- Top Telemetry & Controls Header -->
+      <!-- Minimal Cinema Telemetry & Settings Header -->
       <header id="hud-top" class="hud-element">
         <div class="telemetry-pill">
-          <span class="status-dot"></span>
+          <span id="status-dot" class="status-dot"></span>
           <span id="tel-fps">60 FPS</span>
           <span class="divider">·</span>
-          <span id="tel-count">32,768 Fish</span>
-          <span class="divider">·</span>
-          <span id="tel-chapter">Act I · Bait Ball</span>
+          <span id="tel-count">49,152 Fish</span>
+          <span id="pachinko-telemetry-group" class="hidden">
+            <span class="divider">·</span>
+            <span>Spin <strong id="cnt-spins">0</strong></span>
+            <span class="divider">·</span>
+            <span>Hits <strong id="cnt-jackpots">0</strong></span>
+            <span id="badge-kakuhen" class="kakuhen-tag hidden">KAKUHEN</span>
+          </span>
+          <span id="showcase-telemetry-group" class="hidden">
+            <span class="divider">·</span>
+            <span id="tel-chapter">Act I · Bait Ball</span>
+          </span>
+          <span id="padi-telemetry-group" class="hidden">
+            <span class="divider">·</span>
+            <span>PADI OWD <strong id="tel-padi-cert">0/5</strong></span>
+          </span>
+          <span id="okinawa-telemetry-group" class="hidden">
+            <span class="divider">·</span>
+            <span>図鑑 <strong id="tel-okinawa-dex">0/7</strong></span>
+            <span class="divider">·</span>
+            <span>採集 <strong id="tel-okinawa-loot">0</strong></span>
+          </span>
         </div>
 
+        <!-- Instant Top-Level Feature Mode Switcher -->
+        <nav id="top-mode-pill" class="mode-pill-bar" aria-label="機能モード切替">
+          <button type="button" data-appmode="okinawa" class="mode-pill-btn active">
+            沖縄ダイブ採集
+          </button>
+          <button type="button" data-appmode="padi" class="mode-pill-btn">
+            PADI OWD講習
+          </button>
+          <button type="button" data-appmode="pachinko" class="mode-pill-btn">
+            海物語 3D抽選
+          </button>
+          <button type="button" data-appmode="showcase" class="mode-pill-btn">
+            VFXショーケース
+          </button>
+        </nav>
+
         <div class="top-actions">
-          <button id="btn-reset-cam" class="glass-btn" type="button" title="カメラ視点を初期位置に戻す">
-            視点リセット
+          <button
+            id="btn-screenshot"
+            class="glass-btn camera-top-btn"
+            type="button"
+            title="UIなしの高画質3Dスクリーンショットを撮影して保存 (O / F9)"
+          >
+            📷 スクショ
+          </button>
+          <button id="btn-cycle-tod" class="glass-btn tod-top-btn" type="button" title="時間帯・空と照明モードを順送り切替">
+            ☀️ 昼
+          </button>
+          <button id="btn-yt-chill" class="glass-btn yt-chill-top-btn" type="button" title="YouTube URLを入力して動画＆音楽チルアウト">
+            🎵 YouTubeチル
+          </button>
+          <button id="btn-mute" class="glass-btn" type="button" title="サウンド切替 (M)">
+            Sound ON
           </button>
           <button id="btn-toggle-panel" class="glass-btn" type="button" aria-expanded="false">
-            VFX 設定
+            設定 · 演出 · BGM
           </button>
-          <button id="btn-cinema" class="glass-btn" type="button" title="HUD表示切替 (H)">
-            シネマ表示 (H)
+          <button id="btn-cinema" class="glass-btn" type="button" title="UI非表示 (H)">
+            Cinema (H)
           </button>
         </div>
       </header>
 
-      <!-- Collapsible VFX Engine Parameter Drawer -->
-      <aside id="control-drawer" class="hud-element hidden" aria-label="VFX Engine Controls">
+      <!-- Bottom-Center Abyssal Optical PUSH Trigger (Pachinko Mode) -->
+      <div id="pachinko-trigger-wrap" class="hud-element hidden">
+        <button
+          id="btn-arcade-push"
+          class="optical-push-btn"
+          type="button"
+          aria-label="PUSH ボタン (Space / Enter)"
+        >
+          <span class="push-outer-ring">
+            <span class="push-caustic-halo"></span>
+            <span class="push-crystal-cap">
+              <span class="push-specular-arc"></span>
+              <span id="push-label-text" class="push-word">PUSH</span>
+            </span>
+          </span>
+        </button>
+      </div>
+
+      <!-- Okinawa Kerama-Blue Raft Scavenging & Marine Focus Bio-Scanner HUD -->
+      <section id="okinawa-hud" class="hud-element" aria-label="Okinawa Reef Diving & Scavenging HUD">
+        <!-- Center Diving Crosshair -->
+        <div id="okinawa-crosshair" class="okinawa-crosshair hidden" aria-hidden="true">
+          <span class="crosshair-dot"></span>
+        </div>
+
+        <!-- Dynamic 3D-Projected Marine Creature Focus Bracket -->
+        <div id="okinawa-focus-bracket" class="okinawa-focus-bracket hidden" aria-hidden="true">
+          <span class="bracket-corner tl"></span>
+          <span class="bracket-corner tr"></span>
+          <span class="bracket-corner bl"></span>
+          <span class="bracket-corner br"></span>
+          <span id="okinawa-bracket-label" class="bracket-label">ナンヨウマンタ</span>
+        </div>
+
+        <!-- Marine Species Bio-Scanner Info Card (Appears when focusing on a creature!) -->
+        <div id="okinawa-focus-card" class="padi-glass-card okinawa-focus-card hidden">
+          <div class="focus-card-top">
+            <div>
+              <div class="focus-tag-row">
+                <span id="focus-okinawa-tag" class="focus-okinawa-tag">石垣・慶良間の主役</span>
+                <span id="focus-logged-badge" class="focus-logged-badge">✓ 図鑑登録済</span>
+              </div>
+              <h2 id="focus-jp-name" class="focus-jp-name">ナンヨウマンタ</h2>
+              <div id="focus-sci-name" class="focus-sci-name">Reef Manta Ray · Mobula alfredi</div>
+            </div>
+            <div class="focus-metrics">
+              <span id="focus-size">翼幅 3.6m</span>
+              <strong id="focus-dist">距離 5.2m · 水深 4.2m</strong>
+            </div>
+          </div>
+          <p id="focus-desc" class="focus-desc"></p>
+        </div>
+
+        <!-- Center-Lower Scrap Hook Harvest Prompt -->
+        <div id="okinawa-loot-prompt" class="okinawa-loot-prompt hidden">
+          <div id="okinawa-loot-label" class="loot-prompt-text">
+            🪝 [左クリック長押し / F] スクラップ をフック採集
+          </div>
+          <div class="loot-bar-track">
+            <div id="okinawa-loot-bar" class="loot-bar-fill"></div>
+          </div>
+        </div>
+
+        <!-- Pickup / Craft / Discovery Toast -->
+        <div id="okinawa-toast" class="padi-signal-toast hidden"></div>
+
+        <!-- 3D Raycast Scuba Part Hover Tooltip (Direct 3D Manipulation Prompt) -->
+        <div id="okinawa-part-tooltip" class="okinawa-part-tooltip hidden">
+          <div id="part-tooltip-title" class="part-tooltip-title">🎛️ タンクKバルブノブ</div>
+          <div id="part-tooltip-hint" class="part-tooltip-hint">左右ドラッグで回転開閉</div>
+        </div>
+
+        <!-- Clickable 3D On-Part Guided Target Callout Pin (Points directly at the next 3D part!) -->
+        <button type="button" id="okinawa-wb-pin" class="okinawa-wb-pin hidden">
+          <span id="okinawa-wb-pin-text">👇 ここをクリック：刻印確認</span>
+          <span class="wb-pin-arrow">▼</span>
+        </button>
+
+        <!-- Floating Top-Center 3D Workbench Camera Helper Bar -->
+        <div id="okinawa-wb-cam-bar" class="padi-glass-card okinawa-wb-cam-bar hidden">
+          <span class="wb-cam-hint">
+            🖱️ <strong>光るパーツ(ピン)をクリック</strong>で操作 · <strong>右ドラッグ／空ドラッグ／WASD</strong>で360°回転 · ホイール拡大
+          </span>
+          <button type="button" id="btn-wb-cam-reset" class="live-scuba-btn">🔄 正面アングル</button>
+          <button type="button" id="btn-wb-cam-exit" class="live-scuba-btn warn-exit">🚶 離れて歩く (Esc)</button>
+        </div>
+
+        <!-- Top-Left Okinawa Dive Spot Navigator & Marine Dex Card -->
+        <div id="okinawa-nav-card" class="padi-glass-card okinawa-nav-card">
+          <div class="padi-slate-header">
+            <span id="okinawa-zone-name" class="padi-brand-tag">📍 沖縄ビーチ・ダイビングクラブハウス</span>
+            <div class="nav-header-actions">
+              <button type="button" id="btn-toggle-dex" class="padi-cert-pill clickable-pill hidden">
+                📖 美ら海図鑑 <span id="okinawa-dex-count">0/7</span>
+              </button>
+              <button type="button" id="btn-collapse-nav" class="odc-collapse-btn" title="スポットメニュー開閉">
+                —
+              </button>
+            </div>
+          </div>
+
+          <div id="okinawa-nav-body" class="okinawa-nav-body">
+            <!-- Collapsible 7-Species Okinawa Dex Checklist (Click any species to swim right up to it!) -->
+            <div id="okinawa-dex-panel" class="okinawa-dex-grid hidden">
+              <button type="button" id="dex-manta" data-dexspecies="manta" class="dex-chip" title="クリックでナンヨウマンタの近くへ移動して観察">？ マンタ</button>
+              <button type="button" id="dex-turtle" data-dexspecies="turtle" class="dex-chip" title="クリックでアオウミガメの近くへ移動して観察">？ ウミガメ</button>
+              <button type="button" id="dex-shark" data-dexspecies="shark" class="dex-chip" title="クリックでネムリブカの近くへ移動して観察">？ ネムリブカ</button>
+              <button type="button" id="dex-gurukun" data-dexspecies="gurukun" class="dex-chip" title="クリックでグルクンの群れの近くへ移動して観察">？ グルクン</button>
+              <button type="button" id="dex-napoleon" data-dexspecies="napoleon" class="dex-chip" title="クリックでナポレオンフィッシュの近くへ移動して観察">？ ナポレオン</button>
+              <button type="button" id="dex-clownfish" data-dexspecies="clownfish" class="dex-chip" title="クリックでカクレクマノミの近くへ移動して観察">？ クマノミ</button>
+              <button type="button" id="dex-gardeneel" data-dexspecies="gardeneel" class="dex-chip" title="クリックでチンアナゴの群れの近くへ移動して観察">？ チンアナゴ</button>
+            </div>
+
+            <div class="okinawa-spot-row" id="okinawa-spot-buttons">
+              <button type="button" data-spot="zen_campus" class="padi-skill-chip zen-spot-chip" title="島の裏側にある無人のZEN大学・逗子／南島サンクチュアリ校舎へ移動">🎓 ZEN大学校舎</button>
+              <button type="button" data-spot="clubhouse" class="padi-skill-chip">🏠 クラブハウス</button>
+              <button type="button" data-spot="chura_bar" class="padi-skill-chip">🍹 CHURA BAR</button>
+              <button type="button" data-spot="okislot_corner" class="padi-skill-chip okislot-spot-chip">🌺 沖スロ(BAR)</button>
+              <button type="button" data-spot="fishing_pier" class="padi-skill-chip fish-spot-chip">🎣 桟橋・海釣り</button>
+              <button type="button" data-spot="beach_bbq" class="padi-skill-chip bbq-spot-chip">🍖 ビーチBBQ＆チル</button>
+              <button type="button" data-spot="beach_shore" class="padi-skill-chip">🏖️ 白砂ビーチ</button>
+              <button type="button" data-spot="boat_deck" class="padi-skill-chip">🚤 ボート</button>
+              <button type="button" data-spot="coral_garden" class="padi-skill-chip">🪸 サンゴ庭園</button>
+              <button type="button" data-spot="manta_station" class="padi-skill-chip">🦅 マンタ根</button>
+              <button type="button" data-spot="stone_arch" class="padi-skill-chip">🪨 宮古アーチ</button>
+              <button type="button" data-spot="shipwreck" class="padi-skill-chip">⚓ 沈没船</button>
+            </div>
+
+            <!-- 9-Mode Okinawa Time-of-Day & Resort Illumination Selector -->
+            <div class="okinawa-tod-strip" id="okinawa-tod-buttons" role="group" aria-label="時間帯・空と照明モード">
+              <button type="button" data-tod="dawn_glow" class="tod-chip tod-dawn" title="黎明マジックアワーの朝焼けと篝火">🌅 朝焼け</button>
+              <button type="button" data-tod="sunrise" class="tod-chip tod-sunrise" title="東の海から昇る黄金の朝日とサンロード">🌄 日の出</button>
+              <button type="button" data-tod="morning" class="tod-chip tod-morning" title="凛と澄み渡る爽やかな沖縄の朝">🌤️ 朝</button>
+              <button type="button" data-tod="noon" class="tod-chip tod-noon active" title="抜けるような真夏の美ら海と入道雲">☀️ 昼</button>
+              <button type="button" data-tod="late_afternoon" class="tod-chip tod-afternoon" title="傾く陽差しのゴールデンアワー">🌇 夕方</button>
+              <button type="button" data-tod="sunset_glow" class="tod-chip tod-sunset" title="茜色と紅珊瑚に燃えるサンセット">🌆 夕焼け</button>
+              <button type="button" data-tod="sundown" class="tod-chip tod-sundown" title="水平線へ沈む真紅の太陽とブルーアワー">🎴 日の入り</button>
+              <button type="button" data-tod="night" class="tod-chip tod-night" title="満天の星とムーンロード・篝火＆BARネオン">🌙 夜</button>
+              <button type="button" data-tod="midnight" class="tod-chip tod-midnight" title="天の川と静寂の篝火・幻想の夜光虫ビーチ">🌌 深夜</button>
+            </div>
+
+            <div id="okinawa-sonar-hint" class="okinawa-sonar-hint hidden"></div>
+            <p id="okinawa-controls-hint" class="okinawa-controls-hint">
+              WASD: 移動 · ドラッグ: 360°視点 · Shift: ダッシュ · Space: ジャンプ · K: 釣り · V: 視点
+            </p>
+          </div>
+        </div>
+
+        <!-- Land Clubhouse Gear Selection, PADI Setup Review, Entry & CHURA BAR Panel -->
+        <div id="okinawa-prep-panel" class="padi-glass-card okinawa-prep-panel hidden">
+          <div class="padi-slate-header">
+            <span id="prep-panel-title" class="padi-brand-tag">🤿 ダイビング器材セッティング</span>
+            <div class="prep-header-right">
+              <span id="prep-spg-badge" class="padi-step-pill">👙 水着・未準備</span>
+              <button type="button" id="btn-close-prep" class="link-btn">閉じる ✕</button>
+            </div>
+          </div>
+
+          <!-- Top Course Status + 1-Click Skip & Bare-Swimsuit Reset -->
+          <div id="prep-top-bar" class="prep-top-bar">
+            <div id="prep-style-banner" class="prep-style-banner">
+              👙 すっぴん・水着（クラブハウスで準備しよう！）
+            </div>
+            <div class="prep-top-actions">
+              <button type="button" id="btn-skip-all-prep" class="prep-skip-btn">
+                ⏭️ 講習スキップ（選択器材で一括装着）
+              </button>
+              <button type="button" id="btn-gear-reset" class="prep-reset-btn">
+                🔄 水着に戻す
+              </button>
+            </div>
+          </div>
+
+          <div class="prep-tabs" id="prep-tab-buttons">
+            <button type="button" data-preptab="select" class="prep-tab-btn active">
+              🎨 器材選び
+            </button>
+            <button type="button" data-preptab="gear" class="prep-tab-btn">
+              ①組立 <span id="prep-gear-count">0/5</span>
+            </button>
+            <button type="button" data-preptab="bcd" class="prep-tab-btn">
+              ②着用調整 <span id="prep-wear-count">0/4</span>
+            </button>
+            <button type="button" data-preptab="bwraf" class="prep-tab-btn">
+              ③BWRAF <span id="prep-bwraf-count">0/5</span>
+            </button>
+            <button type="button" data-preptab="entry" class="prep-tab-btn">
+              ④エントリー
+            </button>
+            <button type="button" data-preptab="bar" class="prep-tab-btn bar-tab">
+              🍹 BAR
+            </button>
+            <button type="button" data-preptab="bbq" class="prep-tab-btn bbq-tab">
+              🍖 BBQ・チル
+            </button>
+          </div>
+
+          <!-- Unified Step-by-Step Guided Setup Card (Always shows 'Where you are' & 'What to do next'!) -->
+          <div id="prep-smart-guide" class="prep-smart-guide">
+            <div class="prep-flow-roadmap">
+              <span id="flow-pill-1" class="flow-stage-pill active">①組立</span>
+              <span class="flow-arrow">›</span>
+              <span id="flow-pill-2" class="flow-stage-pill">②着用</span>
+              <span class="flow-arrow">›</span>
+              <span id="flow-pill-3" class="flow-stage-pill">③BWRAF</span>
+              <span class="flow-arrow">›</span>
+              <span id="flow-pill-4" class="flow-stage-pill">④海へ！</span>
+            </div>
+            <div class="smart-guide-head">
+              <span class="smart-guide-tag">🎯 次にやること</span>
+              <span id="lbl-guided-badge" class="smart-guide-badge">① タンク点検 (1/3)</span>
+            </div>
+            <div id="lbl-guided-desc" class="smart-guide-desc">
+              タンク肩の銀色プレートをクリックして、耐圧検査期限と200bar刻印を確認しよう
+            </div>
+            <button type="button" id="btn-guided-next" class="prep-guided-next-btn">
+              🔍 ① タンク刻印を確認する (Space)
+            </button>
+          </div>
+
+          <!-- Tab 0: Clubhouse Rental Gear Selection (Suit x3, BCD x3, Fins x3) -->
+          <div id="prep-pane-select" class="prep-pane">
+            <div class="gear-select-group">
+              <div class="gear-select-label">👕 ウェットスーツ選択（ラックから選んで試着！）</div>
+              <div class="gear-select-row">
+                <button type="button" data-suitvar="kerama_5mm" class="gear-choice-btn active">
+                  🖤 5mm慶良間<small>黒×シアン(4kg)</small>
+                </button>
+                <button type="button" data-suitvar="hibiscus_3mm" class="gear-choice-btn">
+                  🌺 3mmリゾート<small>紺×ピンク(3kg)</small>
+                </button>
+                <button type="button" data-suitvar="pro_gold" class="gear-choice-btn">
+                  ⚡ 5mmプロ仕様<small>黒×ゴールド(4kg)</small>
+                </button>
+              </div>
+            </div>
+
+            <div class="gear-select-group">
+              <div class="gear-select-label">🦺 BCD（浮力調整ジャケット）選択</div>
+              <div class="gear-select-row">
+                <button type="button" data-bcdvar="jacket_cyan" class="gear-choice-btn active">
+                  🦺 ジャケット型<small>黒×シアン定番</small>
+                </button>
+                <button type="button" data-bcdvar="wing_gold" class="gear-choice-btn">
+                  🦅 バックウイング<small>黒×金・水平◎</small>
+                </button>
+                <button type="button" data-bcdvar="resort_coral" class="gear-choice-btn">
+                  🌺 ライトBCD<small>白×コーラル</small>
+                </button>
+              </div>
+            </div>
+
+            <div class="gear-select-group">
+              <div class="gear-select-label">🦶 ダイビングフィン選択（推進力・小回りが変化！）</div>
+              <div class="gear-select-row">
+                <button type="button" data-finvar="cyan_split" class="gear-choice-btn active">
+                  🌊 スプリット<small>シアン軽快</small>
+                </button>
+                <button type="button" data-finvar="yellow_long" class="gear-choice-btn">
+                  ⚡ ロングフィン<small>イエロー高速</small>
+                </button>
+                <button type="button" data-finvar="coral_jet" class="gear-choice-btn">
+                  🌺 ジェットフィン<small>ピンク小回り</small>
+                </button>
+              </div>
+            </div>
+
+            <button type="button" id="btn-next-to-gear" class="prep-next-btn">
+              次へ：① クラブハウス作業台で器材セッティング →
+            </button>
+          </div>
+
+          <!-- Tab 1: Interactive 3D Scuba Workbench Hands-On Simulator (5 Physical Stations) -->
+          <div id="prep-pane-gear" class="prep-pane hidden">
+            <!-- 3D Camera Close-Up Station Tabs (Auto-advances as each station completes, or click to inspect any station!) -->
+            <div class="wb-station-grid" id="wb-focus-buttons">
+              <button type="button" data-wbfocus="wb_valve" class="wb-station-btn active">
+                <span class="prep-check" id="gchk-tank_check">1</span>刻印・Oリング
+              </button>
+              <button type="button" data-wbfocus="wb_bcd" class="wb-station-btn">
+                <span class="prep-check" id="gchk-bcd_mount">2</span>BCDバンド
+              </button>
+              <button type="button" data-wbfocus="wb_reg" class="wb-station-btn">
+                <span class="prep-check" id="gchk-reg_first_stage">3</span>1st・手締め
+              </button>
+              <button type="button" data-wbfocus="wb_lpi" class="wb-station-btn">
+                <span class="prep-check" id="gchk-lpi_connect">4</span>LPI・曇止め
+              </button>
+              <button type="button" data-wbfocus="wb_spg" class="wb-station-btn">
+                <span class="prep-check" id="gchk-valve_open">5</span>開栓・残圧計
+              </button>
+              <button type="button" data-wbfocus="none" class="wb-station-btn exit-cam">
+                🚶 離れて歩く
+              </button>
+            </div>
+
+            <!-- Live 3D Rig Telemetry Strip -->
+            <div id="wb-live-telemetry" class="wb-telemetry-strip">
+              <span>🎛️ バルブ <strong id="wb-tel-turns">0.00</strong>/3回</span>
+              <span>📟 3D針 <strong id="wb-tel-bar">0</strong> bar</span>
+              <span id="wb-tel-seal">⭕ 気密待機</span>
+            </div>
+
+            <!-- Station 1: Tank Stamp, 0.5s Valve Blow-Out & 3D O-Ring Replacement -->
+            <div id="wb-sub-valve" class="wb-subpane">
+              <div class="wb-status-list">
+                <div class="wb-stat-row"><span>タンク肩・耐圧刻印:</span><strong id="wb-status-stamp">未確認</strong></div>
+                <div class="wb-stat-row"><span>バルブ口ゴミ飛ばし:</span><strong id="wb-status-blow">未実施</strong></div>
+                <div class="wb-stat-row"><span>3D Oリング状態:</span><strong id="wb-status-oring" class="warn">⚠️ 塩粒・傷はみ出し！</strong></div>
+              </div>
+              <div class="wb-act-grid">
+                <button type="button" id="btn-wb-stamp" class="prep-mini-btn">🔍 ① 3D刻印を目視確認</button>
+                <button type="button" id="btn-wb-blow" class="prep-mini-btn">💨 ② 0.5秒ブロー噴射</button>
+                <button type="button" id="btn-wb-oring" class="prep-mini-btn ok full-span">
+                  ⭕ ③ 3Dバルブ口のOリング清掃＆新品装着（傷切替）
+                </button>
+              </div>
+            </div>
+
+            <!-- Station 2: BCD Azimuth, Shoulder-Stripe Height & Wet 2-Stage Cam Buckle -->
+            <div id="wb-sub-bcd" class="wb-subpane hidden">
+              <div class="wb-status-list">
+                <div class="wb-stat-row"><span>バルブ穴との向き誤差:</span><strong id="wb-status-bcd-align">+42° (要0°)</strong></div>
+                <div class="wb-stat-row"><span>タンク肩ライン高さ:</span><strong id="wb-status-bcd-height">-6.5cm (低すぎ)</strong></div>
+                <div class="wb-stat-row"><span>濡れカムバックル:</span><strong id="wb-status-cam-lock">🔓 未ロック</strong></div>
+              </div>
+              <div class="wb-act-grid">
+                <button type="button" id="btn-wb-bcd-place" class="prep-mini-btn full-span">🦺 タンクにBCDを通す／外す</button>
+                <button type="button" id="btn-wb-bcd-rot-l" class="prep-mini-btn">↺ 左へ回す</button>
+                <button type="button" id="btn-wb-bcd-rot-r" class="prep-mini-btn">↻ 右へ回す</button>
+                <button type="button" id="btn-wb-bcd-up" class="prep-mini-btn">▲ 肩ラインへ上げる</button>
+                <button type="button" id="btn-wb-bcd-dn" class="prep-mini-btn">▼ 下げる</button>
+                <button type="button" id="btn-wb-bcd-ideal" class="prep-mini-btn full-span">📐 バルブ穴正面(0°)＆タンク肩ライン(0cm)にピタッと揃える</button>
+                <button type="button" id="btn-wb-cam-lock" class="prep-mini-btn ok full-span">🔒 ベルトを濡らして3Dカムレバーをパチンと2段ロック</button>
+              </div>
+            </div>
+
+            <!-- Station 3: Dust Cap, Left/Right Hose Orientation & Finger-Tight Yoke T-Screw -->
+            <div id="wb-sub-reg" class="wb-subpane hidden">
+              <div class="wb-status-list">
+                <div class="wb-stat-row"><span>防水ダストキャップ:</span><strong id="wb-status-dustcap">装着中</strong></div>
+                <div class="wb-stat-row"><span>ホース左右向き:</span><strong id="wb-status-reg-dir">⚠️ 左右逆向き！</strong></div>
+                <div class="wb-stat-row"><span>ヨークネジ締付:</span><strong id="wb-status-yoke">12% (緩すぎ)</strong></div>
+              </div>
+              <div class="wb-act-grid">
+                <button type="button" id="btn-wb-dustcap" class="prep-mini-btn">🎩 ダストキャップ外す/閉める</button>
+                <button type="button" id="btn-wb-reg-place" class="prep-mini-btn">🔧 1stをバルブに被せる/外す</button>
+                <button type="button" id="btn-wb-reg-flip" class="prep-mini-btn full-span">🔄 ホース向き反転（右＝メイン＆オクト ／ 左＝残圧計＆LPIへ）</button>
+              </div>
+              <div class="bcd-slider-box">
+                <div class="bcd-row-between">
+                  <span>🔩 3DヨークT字ネジ回転（指2本手締め 65〜88%）</span>
+                  <button type="button" id="btn-wb-yoke-handtight" class="prep-mini-btn ok">指2本手締め(76%)</button>
+                </div>
+                <input id="slider-wb-yoke" type="range" min="0" max="100" value="12" />
+              </div>
+            </div>
+
+            <!-- Station 4: LPI Quick-Disconnect Coupler & Rinse-Tank Mask Defogging -->
+            <div id="wb-sub-lpi" class="wb-subpane hidden">
+              <div class="wb-status-list">
+                <div class="wb-stat-row"><span>BCD中圧(LPI)カプラー:</span><strong id="wb-status-lpi">未接続</strong></div>
+                <div class="wb-stat-row"><span>マスク曇り止め水洗い:</span><strong id="wb-status-defog">未実施（海中で曇る）</strong></div>
+              </div>
+              <div class="wb-act-grid">
+                <button type="button" id="btn-wb-lpi-toggle" class="prep-mini-btn ok full-span">
+                  🔌 スリーブを引いて3D中圧(LPI)カプラーを『カチッ』と接続／解除
+                </button>
+                <button type="button" id="btn-wb-defog" class="prep-mini-btn full-span">
+                  💧 真水洗い槽でマスク曇り止め塗り＆水すすぎ（水中曇り防止）
+                </button>
+                <button type="button" id="btn-wb-rinse-after" class="prep-mini-btn full-span">
+                  🚿 ダイブ後の片付け：ダストキャップ密閉チェック＆真水塩抜き
+                </button>
+              </div>
+            </div>
+
+            <!-- Station 5: SPG Face-Down, 3D Valve 0..3 Turns, Live 3D SPG Needle & Purge/Inhale Test -->
+            <div id="wb-sub-spg" class="wb-subpane hidden">
+              <div class="wb-status-list">
+                <div class="wb-stat-row"><span>3D残圧計(SPG)向き:</span><strong id="wb-status-spg-face">文字盤表向き</strong></div>
+                <div class="wb-stat-row"><span>バルブ回転・吸気確認:</span><strong id="wb-status-aircheck">0.00回転 · 未確認</strong></div>
+              </div>
+              <div class="bcd-slider-box">
+                <div class="bcd-row-between">
+                  <span>🎛️ 3Dタンクバルブ回転（0.0閉 ⇄ 3.0全開）</span>
+                  <strong id="wb-lbl-valve-slider">0.00 回転</strong>
+                </div>
+                <input id="slider-wb-valve" type="range" min="0" max="300" value="0" />
+                <div class="wb-valve-presets">
+                  <button type="button" id="btn-wb-valve-close" class="prep-mini-btn">🔒 全閉(0)</button>
+                  <button type="button" id="btn-wb-valve-half" class="prep-mini-btn" title="半開きだと静圧は200barでも吸うと針が急落する実験！">🧪 半開き(0.3回)</button>
+                  <button type="button" id="btn-wb-valve-open" class="prep-mini-btn ok">🔓 全開(3.0回)</button>
+                </div>
+              </div>
+              <div class="wb-act-grid">
+                <button type="button" id="btn-wb-spg-flip" class="prep-mini-btn">📟 残圧計を伏せる⇄表返す</button>
+                <button type="button" id="btn-wb-purge-hold" class="prep-mini-btn">🔘 パージ噴射(減圧抜き)</button>
+                <button type="button" id="btn-wb-inhale-test" class="prep-mini-btn ok full-span">
+                  🫁 マウスピース吸気テスト（3D残圧針が200barで振れないか確認！）
+                </button>
+              </div>
+            </div>
+
+            <button type="button" id="btn-next-to-wear" class="prep-next-btn">
+              次へ：② ウェットスーツ＆組み立てた3D器材の着用・調整 →
+            </button>
+          </div>
+
+          <!-- Tab 2: Wetsuit, Weight Belt, Scuba Unit & BCD Wearing Fit -->
+          <div id="prep-pane-bcd" class="prep-pane hidden">
+            <button type="button" id="btn-quick-wear-all" class="prep-guided-next-btn">
+              ✨ 組み立てた3D器材を適正フィットで一括装着する
+            </button>
+            <div class="wear-grid">
+              <button type="button" id="btn-wear-wetsuit" class="prep-buckle-btn">
+                🖤 1. スーツ着用: <strong id="lbl-wear-wetsuit">👙水着</strong>
+              </button>
+              <button type="button" id="btn-wear-weights" class="prep-buckle-btn">
+                ⚖️ 2. ウエイト(右手外し): <strong id="lbl-wear-weights">作業台上</strong>
+              </button>
+              <button type="button" id="btn-wear-bcd" class="prep-buckle-btn">
+                🎒 3. スキューバ背負う: <strong id="lbl-wear-bcd">作業台上</strong>
+              </button>
+              <button type="button" id="btn-wear-maskfins" class="prep-buckle-btn">
+                🤿 4. マスク＆フィン: <strong id="lbl-wear-maskfins">作業台上</strong>
+              </button>
+            </div>
+
+            <div class="bcd-buckle-grid">
+              <button type="button" id="btn-bcd-waist" class="prep-buckle-btn">
+                🔒 ウエスト密着: <strong id="lbl-bcd-waist">未固定</strong>
+              </button>
+              <button type="button" id="btn-bcd-chest" class="prep-buckle-btn">
+                🔒 チェスト固定: <strong id="lbl-bcd-chest">未固定</strong>
+              </button>
+            </div>
+
+            <div class="bcd-slider-box">
+              <div class="bcd-row-between">
+                <span>BCD着た時の両肩ストラップ引き締め</span>
+                <strong id="lbl-bcd-shoulder-pct">22%</strong>
+              </div>
+              <input id="slider-bcd-shoulder" type="range" min="0" max="100" value="22" />
+              <div id="lbl-bcd-shoulder-fit" class="bcd-fit-note warn">
+                緩すぎ ⚠️（背中のタンクが垂れ下がり左右に揺れる）
+              </div>
+            </div>
+
+            <div class="bcd-slider-box">
+              <div class="bcd-row-between">
+                <span>ウエイトベルト重量調整</span>
+                <div class="weight-stepper">
+                  <button type="button" id="btn-weight-minus" class="prep-mini-btn">−1kg</button>
+                  <strong id="lbl-bcd-weight">4 kg</strong>
+                  <button type="button" id="btn-weight-plus" class="prep-mini-btn">+1kg</button>
+                </div>
+              </div>
+              <div id="lbl-bcd-weight-fit" class="bcd-fit-note ok">
+                4kg 適正 ◎（選択中スーツの中性浮力ベスト）
+              </div>
+            </div>
+
+            <div class="bcd-bottom-actions">
+              <button type="button" id="btn-surf-bcd-in" class="prep-mini-btn">
+                ⬆️ 水面給気 (<span id="lbl-surf-bcd">0%</span>)
+              </button>
+              <button type="button" id="btn-surf-bcd-out" class="prep-mini-btn">
+                ⬇️ BCD排気
+              </button>
+              <button type="button" id="btn-next-to-bwraf" class="prep-mini-btn ok">
+                次へ：③ BWRAF →
+              </button>
+            </div>
+          </div>
+
+          <!-- Tab 3: PADI 5-Point Pre-Dive Buddy Safety Check (BWRAF) -->
+          <div id="prep-pane-bwraf" class="prep-pane hidden">
+            <p class="prep-hint">
+              👌 PADIプレダイブ安全確認『B・W・R・A・F』（上から下へ確認！）
+            </p>
+            <button type="button" data-bwraf="b" class="prep-step-row">
+              <span class="prep-check" id="bwchk-b">B</span>
+              <span>BCD — 給排気ボタン動作 ＆ 水面浮力（半給気）確保</span>
+            </button>
+            <button type="button" data-bwraf="w" class="prep-step-row">
+              <span class="prep-check" id="bwchk-w">W</span>
+              <span>Weights — ウエイト装着よし ＆ 右手クイックリリース確認</span>
+            </button>
+            <button type="button" data-bwraf="r" class="prep-step-row">
+              <span class="prep-check" id="bwchk-r">R</span>
+              <span>Releases — ウエスト・胸・肩バックルのロックと外し方確認</span>
+            </button>
+            <button type="button" data-bwraf="a" class="prep-step-row">
+              <span class="prep-check" id="bwchk-a">A</span>
+              <span>Air — バルブ全開・残圧 200 bar・吸って針が振れないか確認</span>
+            </button>
+            <button type="button" data-bwraf="f" class="prep-step-row">
+              <span class="prep-check" id="bwchk-f">F</span>
+              <span>Final OK — ホース挟まりなし・マスク＆フィン・最終OK交換</span>
+            </button>
+            <div class="prep-quick-row">
+              <button type="button" id="btn-bwraf-ok" class="prep-mini-btn ok">
+                👌 BWRAF 5項目を一括OK
+              </button>
+              <button type="button" id="btn-next-to-entry" class="prep-mini-btn">
+                次へ：④ エントリー →
+              </button>
+            </div>
+          </div>
+
+          <!-- Tab 4: Land (Beach) & Boat Entry Execution -->
+          <div id="prep-pane-entry" class="prep-pane hidden">
+            <div class="entry-spot-jump-row">
+              <button type="button" id="btn-stand-clubhouse" class="prep-mini-btn">🏠 クラブハウス</button>
+              <button type="button" id="btn-stand-beach" class="prep-mini-btn">🏖️ 白砂ビーチ</button>
+              <button type="button" id="btn-stand-boat" class="prep-mini-btn">🚤 ボート船尾</button>
+            </div>
+
+            <button type="button" id="btn-entry-beach" class="padi-step-btn success entry-big-btn">
+              🏖️ 陸・白砂ビーチ：波打ち際ウェーディング＆潜降
+            </button>
+            <button type="button" id="btn-entry-giant" class="padi-step-btn primary entry-big-btn">
+              🚤 ボート：ジャイアントストライド・エントリー
+            </button>
+            <button type="button" id="btn-entry-backroll" class="padi-step-btn entry-big-btn">
+              🔄 ボート：バックロール・エントリー（船縁後転）
+            </button>
+            <p class="prep-hint">
+              💡 クラブハウスから階段を降りてビーチへ、または左の木製桟橋を <strong>WASD</strong> で歩いてボートへ乗り込むこともできるよ！
+            </p>
+          </div>
+
+          <!-- Tab 5: Oceanfront Clubhouse Tropical Bar ('CHURA BAR') -->
+          <div id="prep-pane-bar" class="prep-pane hidden">
+            <p class="prep-hint">
+              🍸 <strong>3Dスツールをクリックで着席</strong>・カウンターの<strong>クラフト酒瓶／生タップを直接クリック</strong>（または下のメニュー）でシェイク＆提供！
+            </p>
+            <div class="entry-spot-jump-row">
+              <button type="button" id="btn-go-chura-bar" class="prep-mini-btn">
+                🍹 バー前へ移動
+              </button>
+              <button type="button" id="btn-bar-sit-toggle" class="prep-mini-btn ok">
+                🪑 カウンターに座る
+              </button>
+              <button type="button" id="btn-bar-bottle-zoom" class="prep-mini-btn">
+                🔍 酒瓶・棚を拡大
+              </button>
+              <button type="button" id="btn-bar-go-okislot" class="prep-mini-btn ok">
+                🌺 沖スロを打つ
+              </button>
+            </div>
+            <div class="prep-quick-row">
+              <span id="lbl-bar-seat-status" class="prep-hint">🪑 席を選んでカクテルを頼もう！</span>
+              <button type="button" id="btn-bar-sip" class="prep-mini-btn ok" disabled>
+                🍹 一口飲む (Space)
+              </button>
+            </div>
+            <button type="button" data-bardrink="blue" class="prep-step-row">
+              <span class="prep-check">🌊</span>
+              <span>慶良間ブルーラグーン（ブルーキュラソー×パイン＆傘ピック）</span>
+            </button>
+            <button type="button" data-bardrink="hibiscus" class="prep-step-row">
+              <span class="prep-check">🌺</span>
+              <span>サンセット・ハイビスカスフィズ（美らジン×夕焼け2層グラデ）</span>
+            </button>
+            <button type="button" data-bardrink="shikuwasa" class="prep-step-row">
+              <span class="prep-check">🍋</span>
+              <span>美ら海シークヮーサーモヒート（生ミント・水中エア消費 10%節約！）</span>
+            </button>
+            <button type="button" data-bardrink="mango" class="prep-step-row">
+              <span class="prep-check">🥭</span>
+              <span>完熟マンゴー・ピニャコラーダ（素潜り息こらえ 60秒にUP！）</span>
+            </button>
+            <button type="button" data-bardrink="awamori" class="prep-step-row">
+              <span class="prep-check">🍶</span>
+              <span id="lbl-bar-awamori">琉球泡盛 古酒ロック・手吹き琉球グラス（かち割りロックアイス！）</span>
+            </button>
+            <button type="button" data-bardrink="beer" class="prep-step-row">
+              <span class="prep-check">🍺</span>
+              <span id="lbl-bar-beer">極冷・神泡アイランド生ドラフト（7:3神泡・結露中ジョッキ！）</span>
+            </button>
+            <button type="button" data-bardrink="highball" class="prep-step-row">
+              <span class="prep-check">🥃</span>
+              <span id="lbl-bar-highball">極上かち割りロック・強炭酸ハイボール（薄口カットグラス＆国産レモン！）</span>
+            </button>
+          </div>
+
+          <!-- Tab 6: Beachfront Seafood BBQ (Fillet -> Charcoal Grill -> Eat) & Chillout Lie-Down -->
+          <div id="prep-pane-bbq" class="prep-pane hidden">
+            <p class="prep-hint">
+              🍖 <strong>特選・石垣牛A5ステーキ・沖縄アグー豚串・獲れたて海鮮</strong>を<strong>木曽檜まな板で仕込み＆備長炭で焼き</strong>、<strong>キンッキンの7:3神泡生ビール・強炭酸ハイボール</strong>と共に最高のバカンスを満喫！
+            </p>
+            <div class="entry-spot-jump-row">
+              <button type="button" id="btn-go-bbq-station" class="prep-mini-btn ok">
+                🔪 3D BBQ調理台へ
+              </button>
+              <button type="button" id="btn-go-bbq-dining" class="prep-mini-btn ok">
+                🍽️ 水上ダイニング席へ
+              </button>
+              <button type="button" id="btn-go-fishing-from-bbq" class="prep-mini-btn ok">
+                🎣 魚を釣りに行く
+              </button>
+              <button type="button" id="btn-open-yt-from-bbq" class="prep-mini-btn">
+                🎵 YouTube再生
+              </button>
+              <button type="button" id="btn-bbq-restock" class="prep-mini-btn">
+                🧊 クーラー補充
+              </button>
+            </div>
+
+            <!-- 0. Ultimate Vacation Beer & Highball Pairing on the BBQ Chef Island -->
+            <div class="bbq-section-box">
+              <div class="bbq-sec-head">
+                <span>🍺 炭火BBQペアリング極冷ドリンク:</span>
+                <strong id="lbl-bbq-drink-status">🍺 極冷・7:3神泡生ビール (3/3)</strong>
+              </div>
+              <div class="entry-spot-jump-row">
+                <button type="button" id="btn-bbq-pour-beer" class="prep-mini-btn ok">
+                  🍺 極冷・神泡生ビール
+                </button>
+                <button type="button" id="btn-bbq-pour-highball" class="prep-mini-btn">
+                  🥃 強炭酸ハイボール
+                </button>
+                <button type="button" id="btn-bbq-sip-drink" class="prep-mini-btn ok">
+                  🍻 グビッと飲む (<span id="cnt-bbq-drink-sips">3</span>/3)
+                </button>
+              </div>
+            </div>
+
+            <!-- 1. Cooler Seafood & Wagyu Stock -> Click to put on 3D Hinoki Cutting Board -->
+            <div class="bbq-section-box">
+              <div class="bbq-sec-head">
+                <span>① ロックアイスクーラーの特選食材（クリックでまな板へ）</span>
+                <span id="lbl-bbq-eaten-badge" class="bbq-eaten-pill">実食 0皿</span>
+              </div>
+              <div class="bbq-stock-grid" id="bbq-seafood-buttons">
+                <button type="button" data-seafood="wagyu" class="bbq-ing-btn">
+                  🥩 石垣牛A5 <strong id="cnt-sf-wagyu">2</strong>
+                </button>
+                <button type="button" data-seafood="skewer" class="bbq-ing-btn">
+                  🍢 アグー豚串 <strong id="cnt-sf-skewer">2</strong>
+                </button>
+                <button type="button" data-seafood="lobster" class="bbq-ing-btn">
+                  🦞 イセエビ <strong id="cnt-sf-lobster">1</strong>
+                </button>
+                <button type="button" data-seafood="shellfish" class="bbq-ing-btn">
+                  🦪 シャコガイ <strong id="cnt-sf-shellfish">2</strong>
+                </button>
+                <button type="button" data-seafood="meebai" class="bbq-ing-btn">
+                  🐠 ミーバイ <strong id="cnt-sf-meebai">1</strong>
+                </button>
+                <button type="button" data-seafood="akamachi" class="bbq-ing-btn">
+                  👑 アカマチ <strong id="cnt-sf-akamachi">0</strong>
+                </button>
+                <button type="button" data-seafood="taman" class="bbq-ing-btn">
+                  🐟 タマン <strong id="cnt-sf-taman">1</strong>
+                </button>
+                <button type="button" data-seafood="irabucha" class="bbq-ing-btn">
+                  🐠 イラブチャー <strong id="cnt-sf-irabucha">1</strong>
+                </button>
+                <button type="button" data-seafood="gaara" class="bbq-ing-btn">
+                  🐟 ガーラ <strong id="cnt-sf-gaara">1</strong>
+                </button>
+                <button type="button" data-seafood="gurukun" class="bbq-ing-btn">
+                  🐟 グルクン <strong id="cnt-sf-gurukun">2</strong>
+                </button>
+              </div>
+            </div>
+
+            <!-- 2. 3D Hinoki Cutting Board & Chef Knife -->
+            <div class="bbq-section-box">
+              <div class="bbq-sec-head">
+                <span>② 檜まな板・出刃包丁さばき:</span>
+                <strong id="lbl-bbq-board-status">食材を選んで乗せよう</strong>
+              </div>
+              <div class="wb-act-grid">
+                <button type="button" id="btn-bbq-slice" class="prep-mini-btn ok">
+                  🔪 包丁でさばく / 殻むき
+                </button>
+                <button type="button" id="btn-bbq-to-grill" class="prep-mini-btn">
+                  🔥 備長炭の焼き網へ乗せる
+                </button>
+                <button type="button" id="btn-bbq-sashimi" class="prep-mini-btn">
+                  🍣 獲れたてお刺身で食べる
+                </button>
+                <button type="button" id="btn-bbq-eat-plate" class="prep-mini-btn ok">
+                  🍽️ 焼きたてを食べる (<span id="cnt-bbq-plate">0</span>)
+                </button>
+              </div>
+            </div>
+
+            <!-- 3. Live 3-Slot Binchotan Charcoal Grill Grate -->
+            <div class="bbq-section-box">
+              <div class="bbq-sec-head">
+                <span>③ 備長炭グリル焼き網（クリックで裏返し・お皿へ！）</span>
+              </div>
+              <div class="bbq-grill-slots-row" id="bbq-grill-slot-buttons">
+                <button type="button" data-grillslot="0" id="btn-grill-slot-0" class="bbq-slot-chip">
+                  網① 空き
+                </button>
+                <button type="button" data-grillslot="1" id="btn-grill-slot-1" class="bbq-slot-chip">
+                  網② 空き
+                </button>
+                <button type="button" data-grillslot="2" id="btn-grill-slot-2" class="bbq-slot-chip">
+                  網③ 空き
+                </button>
+              </div>
+            </div>
+
+            <!-- 4. Beach Lie-Down Chillout Spots -->
+            <div class="bbq-section-box">
+              <div class="bbq-sec-head">
+                <span>④ ビーチで横になってチルアウト（3D直接クリックもOK！）</span>
+              </div>
+              <div class="entry-spot-jump-row" id="bbq-lie-buttons">
+                <button type="button" data-liespot="daybed_1" class="prep-mini-btn">
+                  🛌 デイベッド #1
+                </button>
+                <button type="button" data-liespot="daybed_2" class="prep-mini-btn">
+                  🛌 デイベッド #2
+                </button>
+                <button type="button" data-liespot="hammock" class="prep-mini-btn ok">
+                  🌴 ヤシの木ハンモック
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top-Right Titanium Wrist Scuba Dive Computer (Shearwater Teric / Garmin Descent ZHL-16C) -->
+        <div id="okinawa-dive-comp" class="okinawa-dive-comp hidden" aria-label="スキューバ・ダイブコンピューター">
+          <!-- Brushed Titanium Watch Lug Header (Draggable) -->
+          <div id="odc-drag-handle" class="odc-lug-header" title="ドラッグで好きな位置へ移動">
+            <div class="odc-brand-wrap">
+              <span class="odc-watch-dot"></span>
+              <span class="odc-brand-title">KERAMA Mk3i · ZHL-16C</span>
+            </div>
+            <div class="odc-lug-right">
+              <span id="odc-temp" class="odc-temp-chip">28.4°C</span>
+              <span id="odc-ai-badge" class="odc-ai-chip">FREE</span>
+              <button type="button" id="btn-odc-collapse" class="odc-collapse-btn" title="コンパクト表示切替">
+                —
+              </button>
+              <button type="button" id="btn-odc-close" class="odc-collapse-btn" title="ダイブコンピューターをしまう (G)">
+                ✕
+              </button>
+            </div>
+          </div>
+
+          <div id="odc-body-wrap" class="odc-body-wrap">
+            <!-- Tactile Bezel Mode Pusher Tabs -->
+            <div class="odc-bezel-tabs" id="odc-screen-tabs">
+              <button type="button" data-dcscreen="main" class="odc-tab-btn active">MAIN</button>
+              <button type="button" data-dcscreen="compass" class="odc-tab-btn">COMP</button>
+              <button type="button" data-dcscreen="profile" class="odc-tab-btn">PROF</button>
+              <button type="button" data-dcscreen="log" class="odc-tab-btn">GAS·LOG</button>
+            </div>
+
+            <!-- Sapphire-Crystal Full-Color AMOLED Dive Display -->
+            <div id="odc-oled-frame" class="odc-oled-frame">
+              <!-- Left Vertical 8-Compartment Bühlmann N2 Tissue Bar -->
+              <div class="odc-side-col" title="Bühlmann ZHL-16C 体内組織窒素負荷 (8コンパートメント)">
+                <span class="odc-side-lbl">N₂</span>
+                <div class="odc-n2-stack" id="odc-n2-stack">
+                  <span class="odc-seg" id="odc-n2-7"></span>
+                  <span class="odc-seg" id="odc-n2-6"></span>
+                  <span class="odc-seg" id="odc-n2-5"></span>
+                  <span class="odc-seg" id="odc-n2-4"></span>
+                  <span class="odc-seg" id="odc-n2-3"></span>
+                  <span class="odc-seg" id="odc-n2-2"></span>
+                  <span class="odc-seg" id="odc-n2-1"></span>
+                  <span class="odc-seg" id="odc-n2-0"></span>
+                </div>
+              </div>
+
+              <!-- Center AMOLED Multi-Screen Viewport -->
+              <div class="odc-center-screen">
+                <div id="odc-alert-banner" class="odc-alert-banner hidden"></div>
+
+                <!-- Screen 1: MAIN Scuba / Nitrox / Free Telemetry -->
+                <div id="odc-pane-main" class="odc-pane">
+                  <div class="odc-status-strip">
+                    <span id="odc-mode-badge" class="odc-mode-pill">SURFACE</span>
+                    <button type="button" id="btn-odc-gas-quick" class="odc-gas-pill" title="クリックで呼吸ガス切替 (AIR ⇄ EAN32 ⇄ EAN36)">
+                      AIR 21%
+                    </button>
+                    <span id="odc-ata-text" class="odc-ata-text">1.01 ATA</span>
+                  </div>
+
+                  <div class="odc-primary-row">
+                    <div class="odc-prim-cell">
+                      <span class="odc-cell-lbl">DEPTH</span>
+                      <span class="odc-prim-val"><strong id="odc-depth">0.0</strong><small>m</small></span>
+                    </div>
+                    <div class="odc-prim-cell ndl-cell">
+                      <span id="odc-ndl-label" class="odc-cell-lbl">NDL</span>
+                      <span id="odc-ndl-wrap" class="odc-prim-val ndl-ok">
+                        <strong id="odc-ndl">99</strong><small id="odc-ndl-unit">min</small>
+                      </span>
+                    </div>
+                    <div class="odc-prim-cell">
+                      <span id="odc-time-label" class="odc-cell-lbl">SURF</span>
+                      <span class="odc-prim-val time-val"><strong id="odc-time">00:00</strong></span>
+                    </div>
+                  </div>
+
+                  <div class="odc-sub-grid">
+                    <div class="odc-sub-cell">
+                      <span>MAX</span>
+                      <strong id="odc-max-depth">0.0m</strong>
+                    </div>
+                    <div class="odc-sub-cell">
+                      <span id="odc-asc-sub-lbl">ASC</span>
+                      <strong id="odc-asc-rate">0.0m/m</strong>
+                    </div>
+                    <div class="odc-sub-cell">
+                      <span id="odc-air-sub-lbl">AI BAR</span>
+                      <strong id="odc-tank-gtr">-- bar</strong>
+                    </div>
+                    <div class="odc-sub-cell">
+                      <span>PO₂</span>
+                      <strong id="odc-po2">0.21b</strong>
+                    </div>
+                  </div>
+
+                  <div class="odc-compass-mini">
+                    <span id="odc-mini-compass-txt">🧭 000° N · 🏖️ ビーチ・クラブハウス</span>
+                    <button type="button" id="btn-odc-quick-lock" class="odc-mini-lock-btn" title="現在の方位を記憶・ロック">
+                      🎯記憶
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Screen 2: COMPASS 360° Underwater Navigation & Reciprocal Bearing -->
+                <div id="odc-pane-compass" class="odc-pane hidden">
+                  <div class="odc-comp-top">
+                    <div class="odc-comp-deg-box">
+                      <strong id="odc-comp-deg">000°</strong>
+                      <span id="odc-comp-card">N</span>
+                    </div>
+                    <span id="odc-comp-landmark" class="odc-comp-landmark">🏖️ ビーチ・クラブハウス</span>
+                  </div>
+
+                  <svg id="odc-compass-svg" class="odc-compass-svg" viewBox="0 0 200 74" aria-label="360度デジタル水中コンパス">
+                    <rect x="2" y="14" width="196" height="34" rx="6" fill="rgba(4, 24, 38, 0.9)" stroke="rgba(96, 224, 255, 0.35)" stroke-width="1" />
+                    <g id="odc-compass-tape"></g>
+                    <!-- Center Lubber Line -->
+                    <polygon points="100,6 95,14 105,14" fill="#00f2ff" />
+                    <line x1="100" y1="14" x2="100" y2="48" stroke="#00f2ff" stroke-width="1.6" />
+                    <text id="odc-comp-steer-svg" x="100" y="65" text-anchor="middle" class="odc-svg-steer">方位ロック未設定（下のボタンで記憶）</text>
+                  </svg>
+
+                  <button type="button" id="btn-odc-lock-heading" class="odc-full-btn">
+                    🎯 現在方位をベアリングロック
+                  </button>
+                </div>
+
+                <!-- Screen 3: PROFILE Live Depth Graph & ZHL-16C 8-Compartment Chart -->
+                <div id="odc-pane-profile" class="odc-pane hidden">
+                  <div class="odc-prof-stats">
+                    <span>AVG <strong id="odc-avg-depth">0.0m</strong></span>
+                    <span>CNS <strong id="odc-cns-pct">0%</strong></span>
+                    <span>MOD <strong id="odc-mod-depth">56.6m</strong></span>
+                  </div>
+                  <svg id="odc-profile-svg" class="odc-profile-svg" viewBox="0 0 196 64" aria-label="ダイブ水深プロファイルグラフ">
+                    <!-- 5m Safety Stop Reference Line -->
+                    <line x1="0" y1="20" x2="196" y2="20" stroke="rgba(255, 212, 92, 0.35)" stroke-width="1" stroke-dasharray="3 3" />
+                    <text x="4" y="17" class="odc-svg-tiny">5m STOP</text>
+                    <polygon id="odc-profile-area" points="0,4 196,4" fill="rgba(46, 218, 255, 0.18)" />
+                    <polyline id="odc-profile-line" points="0,4 196,4" fill="none" stroke="#42efff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                  <div class="odc-zhl-row" id="odc-zhl-detail" title="Bühlmann ZHL-16C 1〜8番組織 (5分〜635分ハーフタイム)">
+                    <span class="odc-zhl-lbl">ZHL-16C N₂</span>
+                    <div class="odc-zhl-bars" id="odc-zhl-bars">
+                      <span><i id="odc-zbar-0"></i></span>
+                      <span><i id="odc-zbar-1"></i></span>
+                      <span><i id="odc-zbar-2"></i></span>
+                      <span><i id="odc-zbar-3"></i></span>
+                      <span><i id="odc-zbar-4"></i></span>
+                      <span><i id="odc-zbar-5"></i></span>
+                      <span><i id="odc-zbar-6"></i></span>
+                      <span><i id="odc-zbar-7"></i></span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Screen 4: GAS (Air / Nitrox EAN32 / EAN36) & Recorded Dive Logbook -->
+                <div id="odc-pane-log" class="odc-pane hidden">
+                  <div class="odc-gas-selector" id="odc-gas-buttons">
+                    <button type="button" data-dcgas="air21" class="odc-gas-choice active">
+                      AIR 21%<small>MOD 56.6m</small>
+                    </button>
+                    <button type="button" data-dcgas="ean32" class="odc-gas-choice">
+                      EAN32<small>MOD 33.8m</small>
+                    </button>
+                    <button type="button" data-dcgas="ean36" class="odc-gas-choice">
+                      EAN36<small>MOD 28.9m</small>
+                    </button>
+                  </div>
+                  <div id="odc-log-list" class="odc-log-list">
+                    <div class="odc-log-empty">海へ潜って浮上するとダイブログが自動記録されるよ！</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Vertical 6-Segment Bar (Scuba: Ascent Speed Limit / Freediving: Breath-Hold O2!) -->
+              <div class="odc-side-col" title="スキューバ時: 浮上速度インジケーター ／ 素潜り時: 息こらえ残量バー">
+                <span id="odc-asc-side-lbl" class="odc-side-lbl">ASC</span>
+                <div class="odc-asc-stack">
+                  <span class="odc-seg asc-danger" id="odc-asc-5"></span>
+                  <span class="odc-seg asc-danger" id="odc-asc-4"></span>
+                  <span class="odc-seg asc-warn" id="odc-asc-3"></span>
+                  <span class="odc-seg asc-ok" id="odc-asc-2"></span>
+                  <span class="odc-seg asc-ok" id="odc-asc-1"></span>
+                  <span class="odc-seg asc-ok" id="odc-asc-0"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tactile Lower Watch Pusher Row -->
+            <div class="odc-pusher-footer">
+              <button type="button" id="btn-odc-wrist-glance" class="odc-pusher-btn" title="左手首の3Dダイブコンピューターを見る (G)">
+                ⌚ 手首を見る <kbd>G</kbd>
+              </button>
+              <button type="button" id="btn-odc-cycle-screen" class="odc-pusher-btn" title="ダイブコンピューター画面切替 (N)">
+                MODE切替 <kbd>N</kbd>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom-Right Graphical Diver Body Posture (Vertical 90° <-> Horizontal 0°) & WASD Indicator Card -->
+        <div id="okinawa-posture-card" class="padi-glass-card okinawa-posture-card hidden">
+          <div class="posture-header">
+            <span class="padi-brand-tag">体の姿勢角（垂直 ⇄ 水平）</span>
+            <span id="posture-deg-badge" class="posture-badge streamline">22° 水平 ◎</span>
+          </div>
+
+          <div class="posture-diagram-row">
+            <!-- Live SVG Side-Profile Scuba Trim Protractor -->
+            <svg
+              id="posture-svg"
+              class="posture-svg"
+              viewBox="0 0 168 106"
+              aria-label="ダイバー姿勢角インジケーター"
+            >
+              <!-- Water Horizon & Reference Protractor Arc -->
+              <path
+                d="M 64 74 L 64 14 A 60 60 0 0 1 124 74 Z"
+                fill="rgba(72, 214, 248, 0.06)"
+                stroke="rgba(140, 228, 252, 0.22)"
+                stroke-width="1"
+              />
+              <!-- 90° Vertical Axis -->
+              <line
+                x1="64"
+                y1="10"
+                x2="64"
+                y2="98"
+                stroke="rgba(165, 232, 250, 0.35)"
+                stroke-width="1"
+                stroke-dasharray="3 3"
+              />
+              <!-- 0° Horizontal Streamline Axis -->
+              <line
+                x1="14"
+                y1="74"
+                x2="152"
+                y2="74"
+                stroke="rgba(96, 245, 198, 0.55)"
+                stroke-width="1.2"
+                stroke-dasharray="4 3"
+              />
+              <!-- 45° Diagonal Reference Tick -->
+              <line
+                x1="64"
+                y1="74"
+                x2="106"
+                y2="32"
+                stroke="rgba(255, 216, 120, 0.28)"
+                stroke-width="1"
+                stroke-dasharray="2 3"
+              />
+              <text x="67" y="18" class="svg-axis-label">垂直 90°</text>
+              <text x="108" y="31" class="svg-axis-label">45°</text>
+              <text x="118" y="86" class="svg-axis-label horiz">水平 0°</text>
+
+              <!-- Dynamic Rotating Diver Silhouette (0° = facing +X horizontal, 90° = rotate(-90) upright!) -->
+              <g id="svg-diver-group" transform="rotate(-22 64 74)">
+                <!-- Spine Axis Ray -->
+                <line
+                  x1="28"
+                  y1="74"
+                  x2="108"
+                  y2="74"
+                  stroke="rgba(122, 242, 255, 0.55)"
+                  stroke-width="1.4"
+                />
+                <!-- Scuba Tank on Back -->
+                <rect
+                  x="56"
+                  y="62"
+                  width="24"
+                  height="7"
+                  rx="3.5"
+                  fill="#ffd66b"
+                  stroke="#fff5cc"
+                  stroke-width="0.8"
+                />
+                <!-- Torso -->
+                <rect x="52" y="69" width="32" height="10" rx="5" fill="#5ce6ff" />
+                <!-- Head + Dive Mask -->
+                <circle cx="92" cy="73" r="6.5" fill="#dffaff" />
+                <rect x="94" y="72" width="5.5" height="4.5" rx="1.5" fill="#1cb8e8" />
+                <!-- Streamline Arm -->
+                <line
+                  x1="78"
+                  y1="76"
+                  x2="94"
+                  y2="81"
+                  stroke="#8beeff"
+                  stroke-width="3.2"
+                  stroke-linecap="round"
+                />
+                <!-- Animated Flutter-Kick Legs & Swim Fins -->
+                <g id="svg-leg-a">
+                  <line
+                    x1="53"
+                    y1="73"
+                    x2="33"
+                    y2="71"
+                    stroke="#5ce6ff"
+                    stroke-width="3.6"
+                    stroke-linecap="round"
+                  />
+                  <polygon points="33,71 16,66 16,73" fill="#68ffcb" />
+                </g>
+                <g id="svg-leg-b">
+                  <line
+                    x1="53"
+                    y1="75"
+                    x2="33"
+                    y2="78"
+                    stroke="#3ab8df"
+                    stroke-width="3.6"
+                    stroke-linecap="round"
+                  />
+                  <polygon points="33,78 16,76 16,83" fill="#3be0b0" />
+                </g>
+              </g>
+              <!-- Center of Buoyancy Pivot Dot -->
+              <circle cx="64" cy="74" r="3" fill="#ffffff" stroke="#2ad4ff" stroke-width="1.5" />
+            </svg>
+
+            <!-- Interactive Live WASD + Up/Down Key Pad -->
+            <div class="wasd-mini-pad" aria-label="WASD 移動パッド">
+              <div class="wasd-grid">
+                <span></span>
+                <button type="button" data-movekey="KeyW" class="wasd-key" id="keycap-w">W</button>
+                <button type="button" data-movekey="Space" class="wasd-key sub" id="keycap-up" title="浮上 (Space)">▲</button>
+                <button type="button" data-movekey="KeyA" class="wasd-key" id="keycap-a">A</button>
+                <button type="button" data-movekey="KeyS" class="wasd-key" id="keycap-s">S</button>
+                <button type="button" data-movekey="KeyD" class="wasd-key" id="keycap-d">D</button>
+              </div>
+              <button type="button" data-movekey="KeyC" class="wasd-dive-btn" id="keycap-down">
+                ▼ 潜降 (Shift/C)
+              </button>
+            </div>
+          </div>
+
+          <div id="posture-status-text" class="posture-status-text">
+            水平ストリームライン ◎（水の抵抗小・サンゴに優しい姿勢）
+          </div>
+
+          <div class="posture-preset-row" id="posture-preset-buttons">
+            <button type="button" data-trim="auto" class="posture-chip active">自動連動</button>
+            <button type="button" data-trim="0" class="posture-chip">水平 0°</button>
+            <button type="button" data-trim="45" class="posture-chip">斜め 45°</button>
+            <button type="button" data-trim="90" class="posture-chip">垂直 90°</button>
+          </div>
+
+          <input
+            id="slider-body-trim"
+            type="range"
+            min="-25"
+            max="90"
+            value="22"
+            title="姿勢角スライダー (-25° ヘッドダウン 〜 0° 水平 〜 90° 垂直 / Z・Xキー)"
+          />
+        </div>
+
+        <!-- Raft Dive Gear Crafting Modal -->
+        <div id="okinawa-craft-panel" class="padi-glass-card okinawa-craft-panel hidden">
+          <div class="padi-slate-header">
+            <span class="padi-brand-tag">🛠️ ラフト潜水装備ワークベンチ</span>
+            <button type="button" id="btn-close-craft" class="link-btn">閉じる ✕</button>
+          </div>
+          <div id="okinawa-craft-list" class="okinawa-craft-list"></div>
+        </div>
+
+        <!-- Okinawa Sea Fishing Mode Interactive HUD (Authentic Arcade & Simulation Sea Fishing!) -->
+        <div id="okinawa-fishing-hud" class="padi-glass-card okinawa-fishing-hud hidden" aria-label="沖縄海釣りモードHUD">
+          <div class="fish-hud-header">
+            <div class="fish-hud-title-wrap">
+              <span id="fish-hud-spot" class="padi-brand-tag">🎣 美ら海・本格磯＆桟橋フィッシング</span>
+              <span id="fish-hud-stats" class="fish-stats-pill">釣果 0尾 · 図鑑 0/6種</span>
+            </div>
+            <button type="button" id="btn-fish-exit" class="link-btn" title="釣竿をしまう (K / Esc / W・S)">
+              竿をしまう ✕
+            </button>
+          </div>
+
+          <!-- 4 Selectable Authentic Okinawa Rigs / Baits & Lures (Keys 1-4) -->
+          <div id="fish-rig-strip" class="fish-rig-strip" role="group" aria-label="沖縄釣り仕掛け選択">
+            <button type="button" data-fishrig="ukifukase" class="fish-rig-chip active" title="[1] オキアミ・ウキフカセ（バランス万能・コマセ集魚）">
+              <span class="rig-key">1</span>🦐 ウキフカセ
+            </button>
+            <button type="button" data-fishrig="uchikomi" class="fish-rig-chip" title="[2] 島ダコ切り身・大物打ち込み（タマン・アカジン大物特化 +14%サイズUP）">
+              <span class="rig-key">2</span>🦑 大物打ち込み
+            </button>
+            <button type="button" data-fishrig="minnow" class="fish-rig-chip" title="[3] 美ら海シンキングミノー（ガーラ・ミーバイ誘い＆リアクションバイト）">
+              <span class="rig-key">3</span>🐟 美ら海ミノー
+            </button>
+            <button type="button" data-fishrig="deep_glow" class="fish-rig-chip" title="[4] 深場ホタルイカ胴突き（幻の★5アカマチ＆高級根魚狙い）">
+              <span class="rig-key">4</span>✨ 深場ホタルイカ
+            </button>
+          </div>
+
+          <div id="fish-hud-status" class="fish-status-banner">
+            ①仕掛けを選び、②A/Dで潮目リングを狙って、③Space / 左クリック長押しでキャストしよう！
+          </div>
+
+          <!-- Cast Power Gauge with 3D Tide-Rip Sweet-Spot Zone (72%-88%) -->
+          <div id="fish-cast-box" class="fish-cast-box">
+            <div class="fish-cast-head">
+              <span>🎯 キャスト飛距離パワー（海面の光る『潮目リング』を狙え！）</span>
+              <strong id="fish-cast-pct">READY · 緑ゾーン(72-88%)で離す</strong>
+            </div>
+            <div class="fish-cast-track">
+              <div id="fish-cast-sweet" class="fish-cast-sweet" style="left: 72%; width: 16%"></div>
+              <div id="fish-cast-power-fill" class="fish-cast-fill"></div>
+            </div>
+          </div>
+
+          <!-- Underwater 3-Fish Shadow Scanner & Attraction / Enticement Gauge -->
+          <div id="fish-wait-box" class="fish-wait-box hidden">
+            <div id="fish-scanner-text" class="fish-scanner-line">
+              🌊 透き通る海中に沖縄地魚3尾の魚影！Fキーで誘って活性を上げよう♪
+            </div>
+            <div class="fish-gauge-row">
+              <span class="fish-gauge-lbl">集魚・食い気</span>
+              <div class="fish-bar-track">
+                <div id="fish-attract-fill" class="fish-bar-fill attract"></div>
+              </div>
+              <span id="fish-attract-pct" class="fish-gauge-num">20%</span>
+            </div>
+          </div>
+
+          <!-- Live Big-Fish Battle Cockpit (Counter Direction + Fish Stamina + Tension/ATD Drag + Distance) -->
+          <div id="fish-fight-box" class="fish-fight-box hidden">
+            <div class="fish-fight-top">
+              <span id="fish-fight-hint" class="fish-fight-hint">🐟 元気いっぱいの沖縄地魚だ！</span>
+              <div class="fish-fight-badges">
+                <span id="fish-crit-badge" class="fish-mini-badge crit hidden">⚡鬼アワセ</span>
+                <span id="fish-drag-badge" class="fish-mini-badge drag hidden">🔊DRAG逆転!</span>
+                <strong id="fish-dist-text" class="fish-dist-val">残り 8.2m</strong>
+              </div>
+            </div>
+            <div id="fish-dir-banner" class="fish-dir-banner">
+              🎣 左右の走りに逆方向(A/D)の竿さばきを合わせよう！
+            </div>
+            <div class="fish-gauge-row">
+              <span class="fish-gauge-lbl">魚スタミナ</span>
+              <div class="fish-bar-track">
+                <div id="fish-stamina-fill" class="fish-bar-fill stamina"></div>
+              </div>
+              <span id="fish-stamina-pct" class="fish-gauge-num">100%</span>
+            </div>
+            <div class="fish-gauge-row">
+              <span class="fish-gauge-lbl">糸テンション</span>
+              <div class="fish-bar-track">
+                <div id="fish-tension-fill" class="fish-bar-fill safe"></div>
+              </div>
+              <span id="fish-tension-pct" class="fish-gauge-num">25%</span>
+            </div>
+            <div class="fish-gauge-row">
+              <span class="fish-gauge-lbl">引き寄せ率</span>
+              <div class="fish-bar-track">
+                <div id="fish-progress-fill" class="fish-bar-fill progress"></div>
+              </div>
+              <span id="fish-progress-pct" class="fish-gauge-num">0%</span>
+            </div>
+          </div>
+
+          <!-- Landed Catch Celebration Card (Rank + cm & kg + Bonus Tags + BBQ Jump) -->
+          <div id="fish-catch-card" class="fish-catch-card hidden">
+            <div class="fish-catch-head">
+              <div class="fish-catch-title-row">
+                <span id="fish-catch-rank" class="fish-rank-badge rank-s">S</span>
+                <strong id="fish-catch-title">★★★ 沖縄タマン 64.2cm · 4.72kg</strong>
+              </div>
+              <div class="fish-catch-tags">
+                <span id="fish-catch-perfect" class="fish-bonus-tag hidden">🎯潮目ドンピシャ</span>
+                <span id="fish-catch-record" class="fish-record-badge hidden">NEW RECORD!</span>
+              </div>
+            </div>
+            <p id="fish-catch-note" class="fish-catch-note">
+              沖縄の釣り人が憧れる強烈な引きの王者！上品な桜色の白身は刺身も浜焼きも極上！
+            </p>
+            <button type="button" id="btn-fish-go-bbq" class="fish-bbq-jump-btn">
+              🍖 ビーチBBQへ行って今釣った魚をさばく！
+            </button>
+          </div>
+
+          <div class="fish-action-row">
+            <button type="button" id="btn-fish-left" class="fish-side-btn" title="左へ狙う / 左へ竿を倒していなす (A / ←)">
+              ◀ 左狙い (A)
+            </button>
+            <button type="button" id="btn-fish-twitch" class="fish-twitch-btn hidden" title="コマセ撒き・シャクって誘う (F)">
+              🦐 コマセ撒き (F)
+            </button>
+            <button type="button" id="btn-fish-primary" class="fish-primary-btn">
+              🎯 長押しキャスト！ (Space / Click)
+            </button>
+            <button type="button" id="btn-fish-right" class="fish-side-btn" title="右へ狙う / 右へ竿を倒していなす (D / →)">
+              右狙い (D) ▶
+            </button>
+          </div>
+
+          <!-- 6-Species Okinawa Edible Fish Zukan Progress Strip -->
+          <div id="fish-zukan-strip" class="fish-zukan-strip" aria-label="沖縄地魚釣果図鑑6種"></div>
+        </div>
+
+        <!-- CHURA BAR Commercial 30-Phi Oki-Slot ('沖スロ 華閃光 BLACK-30 / デー太郎PRO') Parlor HUD -->
+        <div id="okinawa-okislot-hud" class="padi-glass-card okinawa-okislot-hud hidden" aria-label="CHURA BAR 沖スロ 華閃光 BLACK-30 操作HUD">
+          <div class="okislot-top-bar">
+            <div class="okislot-brand-group">
+              <span id="okislot-machine-badge" class="okislot-machine-pill">🌺 30Φ 華閃光 BLACK-30 · 1番台</span>
+              <button type="button" id="btn-okislot-switch" class="okislot-mini-btn" title="隣の台へ移動">
+                ⇄ 2番台へ
+              </button>
+              <span id="okislot-heaven-badge" class="okislot-heaven-pill">🌺 32G天国ゾーン！</span>
+              <span id="okislot-1gren-badge" class="okislot-1gren-pill hidden">🌈🌺 1G連ストック点灯</span>
+            </div>
+
+            <div class="okislot-counter-strip" aria-label="ホールデータカウンター">
+              <div class="okislot-cnt-cell big">
+                <span>BIG</span>
+                <strong id="okislot-cnt-big">3</strong>
+              </div>
+              <div class="okislot-cnt-cell reg">
+                <span>REG</span>
+                <strong id="okislot-cnt-reg">1</strong>
+              </div>
+              <div class="okislot-cnt-cell rate">
+                <span>合算</span>
+                <strong id="okislot-cnt-rate">1/32.0</strong>
+              </div>
+              <div class="okislot-cnt-cell">
+                <span>総回転</span>
+                <strong id="okislot-cnt-total">128</strong>
+              </div>
+              <div class="okislot-cnt-cell cur">
+                <span>現在</span>
+                <strong id="okislot-cnt-games">14G</strong>
+              </div>
+              <div class="okislot-cnt-cell credit">
+                <span>CREDIT</span>
+                <strong id="okislot-cnt-credit">50</strong>
+              </div>
+              <div class="okislot-cnt-cell medal">
+                <span>🪙 下皿・差枚</span>
+                <strong id="okislot-cnt-medals">150枚 (+0)</strong>
+              </div>
+            </div>
+
+            <div class="okislot-top-actions">
+              <button type="button" id="btn-okislot-insert" class="okislot-mini-btn gold" title="台間メダルサンドから貸出">
+                🪙 サンド貸出 +100
+              </button>
+              <button type="button" id="btn-okislot-exit" class="okislot-mini-btn exit" title="席を立つ (Esc)">
+                🚶 離席 <kbd>Esc</kbd>
+              </button>
+            </div>
+          </div>
+
+          <div class="okislot-history-row">
+            <span class="okislot-hist-lbl">📊 履歴タワー</span>
+            <div id="okislot-history-strip" class="okislot-history-strip"></div>
+            <span id="okislot-sidehint-badge" class="okislot-sidehint-pill hidden"></span>
+          </div>
+
+          <div id="okislot-bonus-bar-wrap" class="okislot-bonus-bar-wrap hidden">
+            <div class="okislot-bonus-bar-head">
+              <strong id="okislot-bonus-bar-title">🎊 BIG BONUS 消化中</strong>
+              <span id="okislot-bonus-bar-nums">0 / 240枚</span>
+            </div>
+            <div class="okislot-bonus-track">
+              <div id="okislot-bonus-fill" class="okislot-bonus-fill" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <div id="okislot-status-banner" class="okislot-status-banner">
+            <span id="okislot-status-text">🌺 MAX BET ＆ レバーON（Space / 3Dレバークリック）で沖スロ『華閃光 BLACK-30』スタート！</span>
+            <strong id="okislot-payout-badge" class="okislot-payout-badge hidden">+15枚!!</strong>
+          </div>
+
+          <div class="okislot-controls-row">
+            <button type="button" id="btn-okislot-primary" class="okislot-lever-btn">
+              🎰 MAX BET ＆ レバーON (Space)
+            </button>
+
+            <div class="okislot-stop-group">
+              <button type="button" id="btn-okislot-stop-0" class="okislot-stop-btn" title="左リール停止 (1 / Z / ←)">
+                <span class="stop-key">左 [1]</span>
+                <small id="okislot-up-0" class="reel-sub-sym">🔔ベル</small>
+                <strong id="okislot-sym-0">🌺赤7</strong>
+                <small id="okislot-lo-0" class="reel-sub-sym">🔄リプ</small>
+              </button>
+              <button type="button" id="btn-okislot-stop-1" class="okislot-stop-btn" title="中リール停止 (2 / X / ↓)">
+                <span class="stop-key">中 [2]</span>
+                <small id="okislot-up-1" class="reel-sub-sym">🔔ベル</small>
+                <strong id="okislot-sym-1">🌺赤7</strong>
+                <small id="okislot-lo-1" class="reel-sub-sym">🔄リプ</small>
+              </button>
+              <button type="button" id="btn-okislot-stop-2" class="okislot-stop-btn" title="右リール停止 (3 / C / →)">
+                <span class="stop-key">右 [3]</span>
+                <small id="okislot-up-2" class="reel-sub-sym">🔔ベル</small>
+                <strong id="okislot-sym-2">🌺赤7</strong>
+                <small id="okislot-lo-2" class="reel-sub-sym">🔔ベル</small>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              id="btn-okislot-align"
+              class="okislot-align-btn hidden"
+              title="成立中の赤7 / BARボーナスを自動で目押し揃え (Enter)"
+            >
+              🎯 7・BARを揃える <kbd>Enter</kbd>
+            </button>
+          </div>
+        </div>
+
+        <!-- Bottom-Center Raft Oxygen, Depth & Resource Inventory Bar -->
+        <div id="okinawa-bottom-bar" class="okinawa-bottom-bar">
+          <div id="okinawa-o2-depth-pill" class="o2-depth-pill padi-glass-card hidden">
+            <div class="o2-block">
+              <span id="okinawa-air-label" class="dc-label">🫁 素潜り息</span>
+              <div class="o2-bar-outer">
+                <div id="okinawa-o2-bar" class="o2-bar-inner"></div>
+              </div>
+              <strong id="okinawa-o2-text" class="o2-pct-text">45s 満タン</strong>
+            </div>
+            <div class="depth-divider"></div>
+            <div class="depth-block">
+              <span class="dc-label">DEPTH</span>
+              <span class="dc-value"><strong id="okinawa-depth">0.0</strong><small>m</small></span>
+            </div>
+          </div>
+
+          <!-- Live Real-Physics Scuba Buoyancy, BCD Inflator, Ear Equalize & Mask Clear Console -->
+          <div id="okinawa-scuba-console" class="scuba-live-console padi-glass-card hidden">
+            <span id="okinawa-buoyancy-badge" class="buoy-live-pill">⚖️ 陸上</span>
+            <button type="button" id="btn-live-bcd-in" class="live-scuba-btn" title="LPIパワーインフレーター給気 (Rキー)">
+              ➕給気<kbd>R</kbd>
+            </button>
+            <span id="lbl-live-bcd-l" class="live-bcd-vol">0.0L</span>
+            <button type="button" id="btn-live-bcd-out" class="live-scuba-btn" title="BCDインフレーター排気 (Tキー)">
+              ➖排気<kbd>T</kbd>
+            </button>
+            <button type="button" id="btn-live-equalize" class="live-scuba-btn" title="潜降時の耳抜き・バルサルバ法 (Eキー)">
+              👂耳抜き<kbd>E</kbd>
+            </button>
+            <button type="button" id="btn-live-maskclear" class="live-scuba-btn" title="マスク曇り止め／水中マスククリア (Mキー)">
+              🤿クリア<kbd>M</kbd>
+            </button>
+          </div>
+
+          <div id="okinawa-loot-inv-pill" class="loot-inv-pill padi-glass-card hidden">
+            <span class="inv-item" title="スクラップ">🔩 <strong id="inv-scrap">0</strong></span>
+            <span class="inv-item" title="サンゴ粘土">🪨 <strong id="inv-clay">0</strong></span>
+            <span class="inv-item" title="沖縄海藻">🌿 <strong id="inv-seaweed">0</strong></span>
+            <span class="inv-item" title="銅鉱石">🟠 <strong id="inv-copper">0</strong></span>
+            <span class="inv-item" title="金属鉱石">⚪ <strong id="inv-iron">0</strong></span>
+            <span class="inv-item" title="黒真珠">🦪 <strong id="inv-pearl">0</strong></span>
+          </div>
+
+          <div class="okinawa-action-pills">
+            <button type="button" id="btn-okinawa-prep" class="scuba-gear-btn ok-btn" title="ダイビング器材セッティング・BCD調整・エントリー (B)">
+              <span id="okinawa-prep-btn-label">🤿 ダイビング準備</span> <kbd>B</kbd>
+            </button>
+            <button type="button" id="btn-okinawa-view" class="scuba-gear-btn ok-btn" title="一人称 / 三人称 視点切替 (V)">
+              🎥 <span id="okinawa-view-label">三人称 VRM</span> <kbd>V</kbd>
+            </button>
+            <button type="button" id="btn-okinawa-photo" class="scuba-gear-btn photo-gear-btn" title="UIなしの高画質3Dスクリーンショットを撮影して保存 (O / F9)">
+              📷 撮影 <kbd>O</kbd>
+            </button>
+            <label class="scuba-gear-btn vrm-upload-btn" title="手持ちの .vrm アバターを読み込む">
+              👤 VRM変更
+              <input id="input-vrm-file" type="file" accept=".vrm,.glb" hidden />
+            </label>
+            <button type="button" id="btn-okinawa-fish" class="scuba-gear-btn ok-btn" title="沖縄海釣りモード切替 (K)">
+              🎣 海釣り <kbd>K</kbd>
+            </button>
+            <button type="button" id="btn-okinawa-okislot" class="scuba-gear-btn ok-btn" title="CHURA BAR 30Φ沖スロ『華閃光 BLACK-30』へ">
+              🌺 沖スロ
+            </button>
+            <button type="button" id="btn-okinawa-dc" class="scuba-gear-btn ok-btn hidden" title="手首ダイブコンピューター確認 (G)">
+              ⌚ ダイコン <kbd>G</kbd>
+            </button>
+            <button type="button" id="btn-okinawa-light" class="scuba-gear-btn hidden">
+              🔦 ライト <kbd>L</kbd>
+            </button>
+            <button type="button" id="btn-okinawa-craft" class="scuba-gear-btn ok-btn hidden">
+              🛠️ 装備クラフト <kbd>Tab</kbd>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- PADI Open Water Diver Interactive 3D Skill Training HUD -->
+      <section id="padi-hud" class="hud-element hidden" aria-label="PADI Open Water Skill Simulator">
+        <!-- Top-Left Waterproof Instructor Slate -->
+        <div id="padi-slate" class="padi-glass-card">
+          <div class="padi-slate-header">
+            <span class="padi-brand-tag">PADI OPEN WATER SKILLS</span>
+            <span id="padi-cert-badge" class="padi-cert-pill">習得 0 / 5</span>
+          </div>
+
+          <div id="padi-skill-tabs" class="padi-skill-grid">
+            <button type="button" data-skill="reg_clear" class="padi-skill-chip active">
+              <span class="skill-check" id="chk-reg_clear">1</span> レギュクリア
+            </button>
+            <button type="button" data-skill="mask_clear" class="padi-skill-chip">
+              <span class="skill-check" id="chk-mask_clear">2</span> マスククリア
+            </button>
+            <button type="button" data-skill="neutral_buoyancy" class="padi-skill-chip">
+              <span class="skill-check" id="chk-neutral_buoyancy">3</span> 中性浮力
+            </button>
+            <button type="button" data-skill="descent_ascent" class="padi-skill-chip">
+              <span class="skill-check" id="chk-descent_ascent">4</span> 潜降・安全停止
+            </button>
+            <button type="button" data-skill="out_of_air" class="padi-skill-chip">
+              <span class="skill-check" id="chk-out_of_air">5</span> エア切れ対応
+            </button>
+            <button type="button" data-skill="free_dive" class="padi-skill-chip">
+              <span class="skill-check">🌊</span> フリー散策
+            </button>
+          </div>
+
+          <div class="padi-briefing-box">
+            <div class="padi-title-row">
+              <strong id="padi-skill-title">Skill 1 · レギュレータークリア＆リカバリー</strong>
+              <span id="padi-step-badge" class="padi-step-pill">Step 1 / 4</span>
+            </div>
+            <p id="padi-coach-msg" class="padi-coach-text">
+              水深8.5mの白砂底に着膝中。まずは大きく息を吸って、レギュレーターを口から外そう。
+            </p>
+            <div id="padi-progress-wrap" class="padi-progress-wrap hidden">
+              <div id="padi-progress-bar" class="padi-progress-bar"></div>
+            </div>
+            <div id="padi-alert-box" class="padi-alert-box hidden"></div>
+          </div>
+        </div>
+
+        <!-- Subtle Center-Top Hand Signal / Feedback Toast -->
+        <div id="padi-signal-toast" class="padi-signal-toast hidden"></div>
+
+        <!-- Bottom-Right Shearwater-Style Wrist Dive Computer -->
+        <div id="padi-dive-comp" class="padi-glass-card padi-dive-comp">
+          <div class="dc-header">
+            <span>DIVE COMPUTER · NDL 99m</span>
+            <span id="dc-ear-badge" class="dc-status-ok">耳圧 OK</span>
+          </div>
+          <div class="dc-main-metrics">
+            <div class="dc-metric">
+              <span class="dc-label">DEPTH</span>
+              <span class="dc-value"><strong id="dc-depth">8.5</strong><small>m</small></span>
+              <span id="dc-target-depth" class="dc-sub hidden">目標 5.0m</span>
+            </div>
+            <div class="dc-metric">
+              <span class="dc-label">ASCENT</span>
+              <span id="dc-ascent-wrap" class="dc-value">
+                <strong id="dc-ascent">0</strong><small>m/m</small>
+              </span>
+              <div class="dc-bar-track">
+                <div id="dc-ascent-bar" class="dc-bar-fill"></div>
+              </div>
+            </div>
+            <div class="dc-metric">
+              <span class="dc-label" id="dc-air-label">TANK SPG</span>
+              <span id="dc-air-wrap" class="dc-value">
+                <strong id="dc-tank">200</strong><small>bar</small>
+              </span>
+              <span id="dc-buoyancy-text" class="dc-sub">浮力 -1.1L</span>
+            </div>
+          </div>
+          <div class="dc-trim-row">
+            <span>肺 <strong id="dc-lung-pct">50%</strong></span>
+            <div class="dc-mini-track"><div id="dc-lung-bar" class="dc-mini-fill lung"></div></div>
+            <span>BCD <strong id="dc-bcd-pct">10%</strong></span>
+            <div class="dc-mini-track"><div id="dc-bcd-bar" class="dc-mini-fill bcd"></div></div>
+          </div>
+        </div>
+
+        <!-- Bottom-Center Scuba Skill & Gear Action Console -->
+        <div id="padi-console" class="padi-console">
+          <div id="padi-step-actions" class="padi-step-actions"></div>
+          <div class="padi-gear-row">
+            <button type="button" id="btn-scuba-inhale" class="scuba-gear-btn" title="吸気 (W)">
+              🫁 吸う <kbd>W</kbd>
+            </button>
+            <button type="button" id="btn-scuba-exhale" class="scuba-gear-btn" title="呼気 (S)">
+              💨 吐く <kbd>S</kbd>
+            </button>
+            <button type="button" id="btn-scuba-inflate" class="scuba-gear-btn" title="BCD給気 (E)">
+              ⬆️ BCD給気 <kbd>E</kbd>
+            </button>
+            <button type="button" id="btn-scuba-deflate" class="scuba-gear-btn" title="BCD排気 (Q)">
+              ⬇️ BCD排気 <kbd>Q</kbd>
+            </button>
+            <button type="button" id="btn-scuba-equalize" class="scuba-gear-btn" title="耳抜き (R)">
+              👂 耳抜き <kbd>R</kbd>
+            </button>
+            <button type="button" id="btn-scuba-purge" class="scuba-gear-btn" title="パージボタン (P)">
+              🔘 パージ <kbd>P</kbd>
+            </button>
+            <button type="button" id="btn-scuba-ok" class="scuba-gear-btn ok-btn" title="OKサイン (G)">
+              👌 OK <kbd>G</kbd>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Unified Collapsible Dark-Glass Control Drawer -->
+      <aside id="control-drawer" class="hud-element hidden" aria-label="Engine & Pachinko Settings">
         <div class="drawer-section">
-          <div class="section-label">フォーメーション制御</div>
-          <div class="mode-grid" id="mode-buttons">
-            <button type="button" data-mode="0" class="chip-btn active">26秒 自動演出</button>
-            <button type="button" data-mode="1" class="chip-btn">ベイトボール固定</button>
-            <button type="button" data-mode="2" class="chip-btn">双翼クラスタ固定</button>
-            <button type="button" data-mode="3" class="chip-btn">3D Gemini スター固定</button>
-            <button type="button" data-mode="4" class="chip-btn">自由回遊 Boids</button>
+          <div class="section-label">動作モード</div>
+          <div class="mode-grid">
+            <button id="tab-mode-okinawa" type="button" class="chip-btn active">
+              沖縄ダイブ採集
+            </button>
+            <button id="tab-mode-padi" type="button" class="chip-btn">
+              PADI OWD講習
+            </button>
+            <button id="tab-mode-pachinko" type="button" class="chip-btn">
+              海物語 3D抽選
+            </button>
+            <button id="tab-mode-showcase" type="button" class="chip-btn">
+              VFXショーケース
+            </button>
+          </div>
+        </div>
+
+        <!-- Pachinko-specific controls -->
+        <div id="drawer-pachinko-controls" class="drawer-group">
+          <div class="drawer-section">
+            <div class="section-label">次回予告テスト（選択すると画面に戻ります）</div>
+            <div class="mode-grid" id="force-preview-buttons">
+              <button type="button" data-force="auto" class="chip-btn active">通常抽選</button>
+              <button type="button" data-force="coral_bubble" class="chip-btn">
+                珊瑚礁リーチ + 大泡
+              </button>
+              <button type="button" data-force="bubble_normal" class="chip-btn">通常泡予告</button>
+              <button type="button" data-force="gyogun_classic" class="chip-btn">
+                王道・大魚群予告
+              </button>
+              <button type="button" data-force="bubble_to_gyogun" class="chip-btn">
+                泡 → 魚群変化
+              </button>
+              <button type="button" data-force="gyogun_red" class="chip-btn">紅蓮・赤魚群</button>
+              <button type="button" data-force="gyogun_clown" class="chip-btn">
+                クマノミ魚群
+              </button>
+              <button type="button" data-force="gyogun_rainbow_rev" class="chip-btn">
+                逆流・超魚群
+              </button>
+            </div>
+          </div>
+
+          <div class="drawer-section">
+            <div class="section-label">抽選確率 / リーチ予告方式</div>
+            <div class="preset-row" id="spec-buttons">
+              <button type="button" data-spec="festival" class="chip-btn active">高確率 1/2.5</button>
+              <button type="button" data-spec="sweet" class="chip-btn">甘デジ 1/8</button>
+              <button type="button" data-spec="real319" class="chip-btn">実機 1/319</button>
+            </div>
+            <div class="mode-switch-row" id="stage-style-buttons">
+              <button type="button" data-style="atlantis" class="chip-btn active">
+                リーチ後 PUSH予告
+              </button>
+              <button type="button" data-style="lagoon" class="chip-btn">
+                リーチ後 自動予告
+              </button>
+            </div>
+          </div>
+
+          <div class="drawer-section row-between">
+            <span>オート連続抽選</span>
+            <input id="chk-autospin" type="checkbox" />
+          </div>
+
+          <div class="drawer-section bgm-box">
+            <div class="section-label">BGM スロット（ファイル選択 / 画面ドロップ対応）</div>
+            <label class="bgm-row">
+              <span>一括 BGM</span>
+              <input id="bgm-file-all" type="file" accept="audio/*" />
+            </label>
+            <label class="bgm-row">
+              <span>通常変動</span>
+              <input id="bgm-file-normal" type="file" accept="audio/*" />
+            </label>
+            <label class="bgm-row">
+              <span>リーチ中</span>
+              <input id="bgm-file-reach" type="file" accept="audio/*" />
+            </label>
+            <label class="bgm-row">
+              <span>大当り中</span>
+              <input id="bgm-file-jackpot" type="file" accept="audio/*" />
+            </label>
+            <div id="bgm-status-text" class="bgm-status">内蔵WebAudio効果音のみ（BGM待機中）</div>
+
+            <label class="slider-row" for="slider-se-vol">
+              <span>効果音 (SE)</span>
+              <span id="val-se-vol">75%</span>
+            </label>
+            <input id="slider-se-vol" type="range" min="0" max="100" value="75" />
+
+            <label class="slider-row" for="slider-bgm-vol">
+              <span>BGM 音量</span>
+              <span id="val-bgm-vol">65%</span>
+            </label>
+            <input id="slider-bgm-vol" type="range" min="0" max="100" value="65" />
+          </div>
+        </div>
+
+        <!-- Showcase-specific controls -->
+        <div id="drawer-showcase-controls" class="drawer-group hidden">
+          <div class="drawer-section">
+            <div class="section-label">フォーメーション制御</div>
+            <div class="mode-grid" id="mode-buttons">
+              <button type="button" data-mode="0" class="chip-btn active">26秒 自動演出</button>
+              <button type="button" data-mode="1" class="chip-btn">ベイトボール固定</button>
+              <button type="button" data-mode="2" class="chip-btn">双翼クラスタ固定</button>
+              <button type="button" data-mode="3" class="chip-btn">3D Gemini スター固定</button>
+              <button type="button" data-mode="4" class="chip-btn">自由回遊 Boids</button>
+            </div>
+          </div>
+
+          <div class="drawer-section">
+            <label class="section-label" for="input-emblem">エンブレム表示テキスト</label>
+            <input id="input-emblem" class="text-input" type="text" value="Gemini 4 Carbon" maxlength="40" />
+          </div>
+        </div>
+
+        <!-- Shared 3D Ocean GPU Settings -->
+        <div class="drawer-section">
+          <div class="section-label">時間帯 · 空と照明モード（全9段階）</div>
+          <div class="drawer-tod-grid" id="drawer-tod-buttons">
+            <button type="button" data-tod="dawn_glow" class="chip-btn">🌅 朝焼け</button>
+            <button type="button" data-tod="sunrise" class="chip-btn">🌄 日の出</button>
+            <button type="button" data-tod="morning" class="chip-btn">🌤️ 朝</button>
+            <button type="button" data-tod="noon" class="chip-btn active">☀️ 昼</button>
+            <button type="button" data-tod="late_afternoon" class="chip-btn">🌇 夕方</button>
+            <button type="button" data-tod="sunset_glow" class="chip-btn">🌆 夕焼け</button>
+            <button type="button" data-tod="sundown" class="chip-btn">🎴 日の入り</button>
+            <button type="button" data-tod="night" class="chip-btn">🌙 夜</button>
+            <button type="button" data-tod="midnight" class="chip-btn">🌌 深夜</button>
           </div>
         </div>
 
         <div class="drawer-section">
-          <div class="section-label">GPU インスタンス数 (GPGPU MRT)</div>
+          <div class="row-between">
+            <span class="section-label">GPU 魚群総数 (GPGPU MRT)</span>
+            <button id="btn-reset-cam" class="link-btn" type="button">視点リセット</button>
+          </div>
           <div class="preset-row" id="preset-buttons">
-            <button type="button" data-preset="16k" class="chip-btn">16,384</button>
-            <button type="button" data-preset="32k" class="chip-btn active">32,768</button>
+            <button type="button" data-preset="32k" class="chip-btn">32,768</button>
+            <button type="button" data-preset="48k" class="chip-btn active">49,152</button>
             <button type="button" data-preset="65k" class="chip-btn">65,536</button>
           </div>
         </div>
@@ -82,21 +1995,16 @@
           <input id="slider-caustics" type="range" min="0" max="180" value="100" />
         </div>
 
-        <div class="drawer-section">
-          <label class="section-label" for="input-emblem">エンブレム表示テキスト</label>
-          <input id="input-emblem" class="text-input" type="text" value="Gemini 4 Carbon" maxlength="40" />
-        </div>
-
         <div class="drawer-section row-between">
           <span>マウス水流インタラクション</span>
           <input id="chk-pointer" type="checkbox" checked />
         </div>
 
-        <p class="hint-text">ドラッグ: 3Dカメラ回転 · ホイール: ズーム · Hキー: UI非表示</p>
+        <p class="hint-text">Space / Enter: PUSH · ドラッグ: 3Dカメラ回転 · ホイール: ズーム</p>
       </aside>
 
-      <!-- Bottom Cinema Scrubber & Chapter Jump Bar -->
-      <footer id="hud-bottom" class="hud-element">
+      <!-- Bottom Cinema Scrubber (Showcase Mode Only) -->
+      <footer id="hud-bottom" class="hud-element hidden">
         <div class="chapter-jumps">
           <button type="button" class="jump-chip" data-jump="0.8">00:00 ベイトボール</button>
           <button type="button" class="jump-chip" data-jump="8.0">00:08 双翼</button>
@@ -106,31 +2014,115 @@
         </div>
 
         <div class="player-bar">
-          <button id="btn-play" class="icon-btn" type="button" aria-label="再生/一時停止" title="再生/一時停止 (Space)">
+          <button id="btn-play" class="icon-btn" type="button" aria-label="再生/一時停止">
             <span id="icon-play-label">❚❚</span>
           </button>
-
-          <input
-            id="timeline-scrubber"
-            type="range"
-            min="0"
-            max="26"
-            step="0.02"
-            value="0"
-            aria-label="26秒演出タイムライン"
-          />
-
+          <input id="timeline-scrubber" type="range" min="0" max="26" step="0.02" value="0" />
           <span id="time-readout" class="time-readout">00:00 / 00:26</span>
-
           <button id="btn-fullscreen" class="icon-btn" type="button" title="フルスクリーン (F)">
             ⛶
           </button>
         </div>
       </footer>
 
-      <button id="btn-exit-cinema" class="cinema-restore hidden" type="button">
-        UIを表示 (H)
-      </button>
+      <!-- Compact Remote Control Bar for the 3D Bamboo Beach Cinema Board (No top-right floating video box!) -->
+      <aside
+        id="yt-chill-widget"
+        class="padi-glass-card yt-chill-widget hidden"
+        aria-label="ビーチシアター 3Dボード投影リモコン"
+      >
+        <div id="yt-chill-drag-handle" class="yt-chill-header" title="ドラッグで好きな位置へ移動">
+          <span class="yt-chill-brand">🎬 ビーチシアター・3Dボード投影リモコン</span>
+          <div class="yt-chill-head-btns">
+            <button
+              type="button"
+              id="btn-yt-go-board"
+              class="yt-board-jump-btn"
+              title="ビーチの竹フレーム3Dスクリーン正面へ移動して鑑賞"
+            >🏖️ ボード前へ</button>
+            <a
+              id="link-yt-external"
+              href="https://www.youtube.com/watch?v=n61ULEU7CO0"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="yt-ext-link"
+              title="埋め込み制限がある公式MVなどはYouTube別タブでも開けるよ"
+            >↗</a>
+            <button type="button" id="btn-yt-close" class="yt-close-btn" title="リモコンを閉じる（3Dボードの映像・音楽はそのまま再生！）">✕</button>
+          </div>
+        </div>
+
+        <div class="yt-url-row">
+          <input
+            id="input-yt-url"
+            type="text"
+            class="yt-url-input"
+            placeholder="YouTube / YouTube Music のURL・プレイリスト・動画IDを貼り付け…"
+            spellcheck="false"
+            autocomplete="off"
+          />
+          <button type="button" id="btn-yt-play" class="yt-play-btn">▶ ボードに投影</button>
+          <button type="button" id="btn-yt-stop" class="yt-stop-btn" title="投影を停止">⏹</button>
+        </div>
+
+        <div class="yt-preset-bar">
+          <div class="yt-preset-chips" id="yt-preset-buttons">
+            <button type="button" data-ytpreset="https://www.youtube.com/watch?v=n61ULEU7CO0" class="yt-preset-chip">
+              ☕ Lofi Chill Live
+            </button>
+            <button type="button" data-ytpreset="https://www.youtube.com/watch?v=f0HOQGTfkcs" class="yt-preset-chip">
+              🌙 Chill Synth / Beats
+            </button>
+            <button type="button" data-ytpreset="https://www.youtube.com/watch?v=5yx6BWlEVcY" class="yt-preset-chip">
+              🐾 Chillhop Live
+            </button>
+            <button type="button" data-ytpreset="https://www.youtube.com/watch?v=4xDzrJKXOOY" class="yt-preset-chip">
+              🌊 Synthwave Sunset
+            </button>
+          </div>
+          <label class="yt-duck-toggle" title="YouTube再生中はゲーム内BGMを自動で一時停止（波や炭火の音は残るよ）">
+            <input id="chk-yt-duck-bgm" type="checkbox" checked />
+            <span>BGM自動オフ</span>
+          </label>
+        </div>
+
+        <div id="yt-status-note" class="yt-status-note">
+          💡 映像はビーチの竹フレーム3Dボードに直接映るよ！リモコンを『✕』で閉じてもボードで再生されたまま楽しめるよ♪
+        </div>
+      </aside>
+
+      <div id="cinema-floating-bar" class="cinema-floating-bar hidden">
+        <button
+          id="btn-cinema-screenshot"
+          class="cinema-restore cinema-shot-btn"
+          type="button"
+          title="現在の構図でスクリーンショットを撮影 (O / F9)"
+        >
+          📷 撮影 (O)
+        </button>
+        <button id="btn-exit-cinema" class="cinema-restore" type="button">
+          UIを表示 (H)
+        </button>
+      </div>
+
+      <div id="screenshot-flash" class="screenshot-flash" aria-hidden="true"></div>
+
+      <div
+        id="screenshot-toast"
+        class="screenshot-toast hidden"
+        role="status"
+        aria-live="polite"
+        title="クリックで閉じる"
+      >
+        <div class="screenshot-thumb-frame">
+          <img id="screenshot-toast-img" class="screenshot-toast-img" alt="スクリーンショットプレビュー" />
+        </div>
+        <div class="screenshot-toast-meta">
+          <div class="screenshot-toast-title">📷 スクリーンショットを保存</div>
+          <div id="screenshot-toast-name" class="screenshot-toast-name">carbon-ocean.png</div>
+          <div id="screenshot-toast-sub" class="screenshot-toast-sub">PNG ダウンロード完了</div>
+        </div>
+      </div>
 
       <div id="error-banner" class="error-banner hidden" role="alert"></div>
     </div>
